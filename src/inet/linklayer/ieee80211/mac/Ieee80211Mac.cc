@@ -275,12 +275,6 @@ void Ieee80211Mac::initialize(int stage)
         nav = false;
         txop = false;
         last = 0;
-// XXX: AUTOBITRATE REFACTORING
-//        contI = 0;
-//        contJ = 0;
-//        recvdThroughput = 0;
-//        _snr = 0;
-//        samplingCoeff = 50;
 
         // statistics
         for (int i = 0; i < numCategories(); i++) {
@@ -302,12 +296,6 @@ void Ieee80211Mac::initialize(int stage)
         numSentTXOP = 0;
         numReceivedOther = 0;
         numAckSend = 0;
-// XXX: AUTOBITRATE REFACTORING
-//        successCounter = 0;
-//        failedCounter = 0;
-//        recovery = 0;
-//        timer = 0;
-//        timeStampLastMessageReceived = SIMTIME_ZERO;
 
         stateVector.setName("State");
         stateVector.setEnum("inet::Ieee80211Mac");
@@ -388,40 +376,6 @@ void Ieee80211Mac::initWatches()
     if (throughputTimer)
         WATCH(throughputLastPeriod);
 }
-
-//void Ieee80211Mac::configureAutoBitRate()
-//{
-// XXX: AUTOBITRATE REFACTORING
-//    forceBitRate = par("forceBitRate");
-//    minSuccessThreshold = par("minSuccessThreshold");
-//    minTimerTimeout = par("minTimerTimeout");
-//    timerTimeout = par("timerTimeout");
-//    successThreshold = par("successThreshold");
-//    autoBitrate = par("autoBitrate");
-//    switch (autoBitrate) {
-//        case 0:
-//            rateControlMode = RATE_CR;
-//            EV_DEBUG << "MAC Transmission algorithm : Constant Rate" << endl;
-//            break;
-//
-//        case 1:
-//            rateControlMode = RATE_ARF;
-//            EV_DEBUG << "MAC Transmission algorithm : ARF Rate" << endl;
-//            break;
-//
-//        case 2:
-//            rateControlMode = RATE_AARF;
-//            successCoeff = par("successCoeff");
-//            timerCoeff = par("timerCoeff");
-//            maxSuccessThreshold = par("maxSuccessThreshold");
-//            EV_DEBUG << "MAC Transmission algorithm : AARF Rate" << endl;
-//            break;
-//
-//        default:
-//            throw cRuntimeError("Invalid autoBitrate parameter: '%d'", autoBitrate);
-//            break;
-//    }
-//}
 
 void Ieee80211Mac::finish()
 {
@@ -704,25 +658,9 @@ void Ieee80211Mac::handleLowerPacket(cPacket *msg)
     if (msg->getControlInfo() && dynamic_cast<Ieee80211ReceptionIndication *>(msg->getControlInfo())) {
         Ieee80211ReceptionIndication *cinfo = (Ieee80211ReceptionIndication *)msg->removeControlInfo();
         autoRatePlugin->someKindOfFunction1(cinfo);
-        // XXX: someKindOfFunction1
-//        if (contJ % 10 == 0) {
-//            snr = _snr;
-//            contJ = 0;
-//            _snr = 0;
-//        }
-//        contJ++;
-//        _snr += cinfo->getSnr() / 10;
-//        lossRate = cinfo->getLossRate();
         delete cinfo;
     }
     autoRatePlugin->someKindOfFunction2();
-    // XXX: someKindOfFunction2
-//    if (contI % samplingCoeff == 0) {
-//        contI = 0;
-//        recvdThroughput = 0;
-//    }
-//    contI++;
-
     frame = dynamic_cast<Ieee80211Frame *>(msg);
     if (autoRatePlugin->getTimeStampLastMessageReceived() == SIMTIME_ZERO)
         autoRatePlugin->setLastMessageTimeStamp();
@@ -2137,19 +2075,6 @@ void Ieee80211Mac::reportDataOk()
     const IIeee80211Mode *fasterMode = autoRatePlugin->computeFasterDataFrameMode(modeSet, dataFrameMode);
     if (fasterMode)
         dataFrameMode = fasterMode;
-//    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_CR)
-//        return;
-//    successCounter++;
-//    failedCounter = 0;
-//    recovery = false;
-//    if ((successCounter == getSuccessThreshold() || timer == getTimerTimeout())
-//        && modeSet->getFasterMode(dataFrameMode))
-//    {
-//        dataFrameMode = modeSet->getFasterMode(dataFrameMode);
-//        timer = 0;
-//        successCounter = 0;
-//        recovery = true;
-//    }
 }
 
 // XXX: computeSlowerDataFrameMode() ??
@@ -2159,87 +2084,7 @@ void Ieee80211Mac::reportDataFailed(void)
     const IIeee80211Mode *slowerMode = autoRatePlugin->computeSlowerDataFrameMode(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
     if (slowerMode)
         dataFrameMode = slowerMode;
-//    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_CR)
-//        return;
-//    timer++;
-//    failedCounter++;
-//    successCounter = 0;
-//    if (recovery) {
-//        if (retryCounter() == 1) {
-//            reportRecoveryFailure();
-//            const IIeee80211Mode *slowerMode = modeSet->getSlowerMode(dataFrameMode);
-//            if (slowerMode != nullptr)
-//                dataFrameMode = slowerMode;
-//        }
-//        timer = 0;
-//    }
-//    else {
-//        if (needNormalFallback()) {
-//            reportFailure();
-//            const IIeee80211Mode *slowerMode = modeSet->getSlowerMode(dataFrameMode);
-//            if (slowerMode != nullptr)
-//                dataFrameMode = slowerMode;
-//        }
-//        if (retryCounter() >= 2) {
-//            timer = 0;
-//        }
-//    }
 }
-
-//int Ieee80211Mac::getMinTimerTimeout(void)
-//{
-//    return minTimerTimeout;
-//}
-
-//int Ieee80211Mac::getMinSuccessThreshold(void)
-//{
-//    return minSuccessThreshold;
-//}
-
-//int Ieee80211Mac::getTimerTimeout(void)
-//{
-//    return timerTimeout;
-//}
-
-//int Ieee80211Mac::getSuccessThreshold(void)
-//{
-//    return successThreshold;
-//}
-
-//void Ieee80211Mac::setTimerTimeout(int timer_timeout)
-//{
-//    if (timer_timeout >= minTimerTimeout)
-//        timerTimeout = timer_timeout;
-//    else
-//        throw cRuntimeError("timer_timeout is less than minTimerTimeout");
-//}
-
-// XXX: autorate
-//void Ieee80211Mac::setSuccessThreshold(int success_threshold)
-//{
-//    if (success_threshold >= minSuccessThreshold)
-//        successThreshold = success_threshold;
-//    else
-//        throw cRuntimeError("success_threshold is less than minSuccessThreshold");
-//}
-
-// XXX: autorate
-//void Ieee80211Mac::reportRecoveryFailure(void)
-//{
-//    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF) {
-//        setSuccessThreshold((int)(std::min((double)getSuccessThreshold() * successCoeff, (double)maxSuccessThreshold)));
-//        setTimerTimeout((int)(std::max((double)getMinTimerTimeout(), (double)(getSuccessThreshold() * timerCoeff))));
-//    }
-//}
-
-// XXX: autorate
-//void Ieee80211Mac::reportFailure(void)
-//{
-//    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF) {
-//        setTimerTimeout(getMinTimerTimeout());
-//        setSuccessThreshold(getMinSuccessThreshold());
-//    }
-//}
 
 bool Ieee80211Mac::needRecoveryFallback(void)
 {
