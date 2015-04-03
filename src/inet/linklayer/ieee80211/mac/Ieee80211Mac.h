@@ -38,6 +38,8 @@
 #include "inet/linklayer/ieee80211/mac/Ieee80211Consts.h"
 #include "inet/linklayer/ieee80211/mac/IQoSClassifier.h"
 
+#include "inet/linklayer/ieee80211/mac/Ieee80211MacAutoRate.h"
+
 namespace inet {
 
 namespace ieee80211 {
@@ -88,14 +90,14 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     };
 
     typedef std::map<MACAddress, Ieee80211ASFTuple> Ieee80211ASFTupleList;
-
-    enum RateControlMode {
-        RATE_ARF,    // Auto Rate Fallback
-        RATE_AARF,    // Adaptatice ARF
-        RATE_CR,    // Constant Rate
-    };
-
-    RateControlMode rateControlMode = (RateControlMode)-1;
+// XXX: AUTOBITRATE REFACTORING
+//    enum RateControlMode {
+//        RATE_ARF,    // Auto Rate Fallback
+//        RATE_AARF,    // Adaptatice ARF
+//        RATE_CR,    // Constant Rate
+//    };
+//
+//    RateControlMode rateControlMode = (RateControlMode)-1;
 
     const IIeee80211Mode *recFrameModulation = nullptr;
     bool validRecMode = false;
@@ -121,30 +123,33 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     const IIeee80211Mode *basicFrameMode = nullptr;
     const IIeee80211Mode *controlFrameMode = nullptr;
 
-    // Variables used by the auto bit rate
-    bool forceBitRate = false;    //if true the
-    unsigned int intrateIndex = 0;
-    int contI = 0;
-    int contJ = 0;
-    int samplingCoeff = 0;
-    double recvdThroughput = NaN;
-    int autoBitrate = 0;
-    int rateIndex = 0;
-    int successCounter = 0;
-    int failedCounter = 0;
-    bool recovery = false;
-    int timer = 0;
-    int successThreshold = 0;
-    int maxSuccessThreshold = 0;
-    int timerTimeout = 0;
-    int minSuccessThreshold = 0;
-    int minTimerTimeout = 0;
-    double successCoeff = NaN;
-    double timerCoeff = NaN;
-    double _snr = NaN;
-    double snr = NaN;
-    double lossRate = NaN;
-    simtime_t timeStampLastMessageReceived;
+    Ieee80211MacAutoRate *autoRatePlugin = nullptr;
+
+// XXX: AUTOBITRATE REFACTORING
+//    // Variables used by the auto bit rate
+//    bool forceBitRate = false;    //if true the
+//    unsigned int intrateIndex = 0;
+//    int contI = 0;
+//    int contJ = 0;
+//    int samplingCoeff = 0;
+//    double recvdThroughput = NaN;
+//    int autoBitrate = 0;
+//    int rateIndex = 0;
+//    int successCounter = 0;
+//    int failedCounter = 0;
+//    bool recovery = false;
+//    int timer = 0;
+//    int successThreshold = 0;
+//    int maxSuccessThreshold = 0;
+//    int timerTimeout = 0;
+//    int minSuccessThreshold = 0;
+//    int minTimerTimeout = 0;
+//    double successCoeff = NaN;
+//    double timerCoeff = NaN;
+//    double _snr = NaN;
+//    double snr = NaN;
+//    double lossRate = NaN;
+//    simtime_t timeStampLastMessageReceived;
     // used to measure the throughput over a period
     uint64_t recBytesOverPeriod = 0;
     simtime_t throughputTimePeriod = 0;
@@ -447,7 +452,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     virtual InterfaceEntry *createInterfaceEntry() override;
     virtual void initializeQueueModule();
     virtual void finish() override;
-    virtual void configureAutoBitRate();
+// XXX    virtual void configureAutoBitRate();
     virtual void initWatches();
     virtual const MACAddress& isInterfaceRegistered();
     //@}
@@ -637,17 +642,17 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     virtual void reportDataOk(void);
     virtual void reportDataFailed(void);
 
-    virtual int getMinTimerTimeout(void);
-    virtual int getMinSuccessThreshold(void);
+//    virtual int getMinTimerTimeout(void);
+//    virtual int getMinSuccessThreshold(void);
 
-    virtual int getTimerTimeout(void);
-    virtual int getSuccessThreshold(void);
+//    virtual int getTimerTimeout(void);
+//    virtual int getSuccessThreshold(void);
 
-    virtual void setTimerTimeout(int timer_timeout);
-    virtual void setSuccessThreshold(int success_threshold);
+//    virtual void setTimerTimeout(int timer_timeout);
+//    virtual void setSuccessThreshold(int success_threshold);
 
-    virtual void reportRecoveryFailure(void);
-    virtual void reportFailure(void);
+//    virtual void reportRecoveryFailure(void);
+//    virtual void reportFailure(void);
 
     virtual bool needRecoveryFallback(void);
     virtual bool needNormalFallback(void);
