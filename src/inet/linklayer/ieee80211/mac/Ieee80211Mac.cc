@@ -100,6 +100,7 @@ void Ieee80211Mac::initialize(int stage)
 
     //TODO: revise it: it's too big; should revise stages, too!!!
     if (stage == INITSTAGE_LOCAL) {
+        autoRatePlugin = dynamic_cast<Ieee80211MacAutoRate *>(getSubmodule("autoRate"));
         int numQueues = 1;
         if (par("EDCA")) {
             const char *classifierClass = par("classifier");
@@ -215,21 +216,6 @@ void Ieee80211Mac::initialize(int stage)
             controlFrameMode = modeSet->getMode(bps(controlBitRate));
 
         EV_DEBUG << " slotTime=" << getSlotTime() * 1e6 << "us DIFS=" << getDIFS() * 1e6 << "us";
-        //    forceBitRate = par("forceBitRate");
-        //    minSuccessThreshold = par("minSuccessThreshold");
-        //    minTimerTimeout = par("minTimerTimeout");
-        //    timerTimeout = par("timerTimeout");
-        //    successThreshold = par("successThreshold");
-        //    autoBitrate = par("autoBitrate");
-        //            successCoeff = par("successCoeff");
-        //            timerCoeff = par("timerCoeff");
-        //            maxSuccessThreshold = par("maxSuccessThreshold");
-        // configure AutoBit Rate
-
-//        configureAutoBitRate();
-//        autoRatePlugin = new Ieee80211MacAutoRate(this, par("forceBitRate").boolValue(), par("minSuccessThreshold").longValue(), par("minTimerTimeout").longValue(),
-//                                                  par("timerTimeout").longValue(), par("successThreshold").longValue(), par("autoBitrate").longValue(),
-//                                                  par("successCoeff").doubleValue(), par("timerCoeff").doubleValue(), par("maxSuccessThreshold").longValue());
         //end auto rate code
         EV_DEBUG << " basicBitrate=" << basicBitrate / 1e6 << "Mb ";
         EV_DEBUG << " bitrate=" << bitrate / 1e6 << "Mb IDLE=" << IDLE << " RECEIVE=" << RECEIVE << endl;

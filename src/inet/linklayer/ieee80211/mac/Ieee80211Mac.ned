@@ -21,6 +21,7 @@ package inet.linklayer.ieee80211.mac;
 
 import inet.linklayer.base.MACProtocolBase;
 import inet.linklayer.contract.IMACProtocol;
+import inet.linklayer.ieee80211.mac.Ieee80211MacAutoRate;
 
 //
 // Implementation of the 802.11 MAC protocol. This module is intended
@@ -55,7 +56,7 @@ import inet.linklayer.contract.IMACProtocol;
 // listen interval which is related to power management, capability information
 // which is related to PCF and other non-modelled features).
 //
-simple Ieee80211Mac extends MACProtocolBase like IMACProtocol
+module Ieee80211Mac extends MACProtocolBase like IMACProtocol
 {
     parameters:
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
@@ -100,16 +101,6 @@ simple Ieee80211Mac extends MACProtocolBase like IMACProtocol
         int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
         double phyHeaderLength @unit("s") = default(-1s); // when <0, the MAC will compute it in function of the modulation type
-        bool forceBitRate = default(false); // if true, the MAC will force the bitrate to the physical layer
-        int autoBitrate @enum(0,1,2) = default(0); // 0 = constant bit rate (autobitrate algorithm disabled), 1 = ARF Rate, 2 = AARF Rate
-        // parameters used by the autobitrate
-        int minTimerTimeout = default(15);
-        int timerTimeout = default(minTimerTimeout);
-        int minSuccessThreshold = default(10);
-        int successThreshold = default(minSuccessThreshold);
-        int maxSuccessThreshold = default(60);
-        double successCoeff = default(2.0);
-        double timerCoeff = default(2.0);
         // duplicate detection
         bool duplicateDetectionFilter = default(true); // whether to detect and filter out duplicate frames
         bool purgeOldTuples = default(true); // delete old tuples in the duplicate list
@@ -139,4 +130,8 @@ simple Ieee80211Mac extends MACProtocolBase like IMACProtocol
         upperLayerOut @labels(Ieee80211Frame);
         lowerLayerIn @labels(Ieee80211Frame);
         lowerLayerOut @labels(Ieee80211Frame);
+
+    submodules:
+	    autoRate : Ieee80211MacAutoRate;
+
 }
