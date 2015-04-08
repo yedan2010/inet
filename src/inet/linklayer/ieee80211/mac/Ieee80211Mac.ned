@@ -21,7 +21,6 @@ package inet.linklayer.ieee80211.mac;
 
 import inet.linklayer.base.MACProtocolBase;
 import inet.linklayer.contract.IMACProtocol;
-import inet.linklayer.ieee80211.mac.Dummys;
 
 //
 // Implementation of the 802.11 MAC protocol. This module is intended
@@ -56,7 +55,7 @@ import inet.linklayer.ieee80211.mac.Dummys;
 // listen interval which is related to power management, capability information
 // which is related to PCF and other non-modelled features).
 //
-module Ieee80211Mac extends MACProtocolBase like IMACProtocol
+simple Ieee80211Mac extends MACProtocolBase like IMACProtocol
 {
     parameters:
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
@@ -140,7 +139,4 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         upperLayerOut @labels(Ieee80211Frame);
         lowerLayerIn @labels(Ieee80211Frame);
         lowerLayerOut @labels(Ieee80211Frame);
-
-    submodules:
-        dummy : Dummy;
 }
