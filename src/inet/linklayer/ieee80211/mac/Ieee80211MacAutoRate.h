@@ -79,16 +79,16 @@ class INET_API Ieee80211MacAutoRate : public cSimpleModule
         void increaseReceivedThroughput(unsigned int bitLength);
         const simtime_t getTimestampLastMessageReceived() const { return timestampLastMessageReceived; }
 
-        void reportDataOk(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode);
-        void reportDataFailed(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback);
+        void reportDataOk(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode); // TODO: find a proper name
+        void reportDataFailed(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback); // TODO: find a proper name
         void setTimerTimeout(int timerTimout);
         void setSuccessThreshold(int successThreshold);
         void setLastMessageTimestamp();
-        void someKindOfFunction1(const Ieee80211Frame *frame);
-        void reportFailure();
+        void someKindOfFunction1(const Ieee80211Frame *frame); // TODO: find a proper name
+        void reportFailure(); // TODO: find a proper name
         const IIeee80211Mode *computeFasterDataFrameMode(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode);
         const IIeee80211Mode *computeSlowerDataFrameMode(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback);
-        void reportRecoveryFailure();
+        void reportRecoveryFailure(); // TODO: find a proper name
 
     };
 } /* namespace ieee80211 */
