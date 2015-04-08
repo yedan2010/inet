@@ -32,7 +32,7 @@ using namespace physicallayer;
 
 class Ieee80211Mac;
 
-class INET_API Ieee80211MacAutoRate
+class INET_API Ieee80211MacAutoRate : public cSimpleModule
 {
     public:
         enum RateControlMode {
@@ -44,7 +44,7 @@ class INET_API Ieee80211MacAutoRate
         RateControlMode rateControlMode = (RateControlMode)-1;
 
         // Variables used by the auto bit rate
-        Ieee80211Mac *ieee80211mac = nullptr;
+        Ieee80211Mac *ieee80211Mac = nullptr;
         bool forceBitRate = false;    //if true the
         unsigned int intrateIndex = 0;
         int contI = 0;
@@ -69,8 +69,12 @@ class INET_API Ieee80211MacAutoRate
         double lossRate = NaN;
         simtime_t timestampLastMessageReceived = SIMTIME_ZERO; // XXX value comes from the Ieee80211MAC::initialize()
 
+    protected:
+        virtual int numInitStages() const { return NUM_INIT_STAGES; }
+        virtual void initialize(int stage);
+
     public:
-        Ieee80211MacAutoRate(Ieee80211Mac *ieee80211mac, bool forceBitRate, int minSuccessThreshold, int minTimerTimeout, int timerTimeout, int successThreshold, int autoBitrate, double successCoeff, double timerCoeff, int maxSuccessThreshold);
+        Ieee80211MacAutoRate() {}
 
         RateControlMode getRateControlMode() const { return rateControlMode; }
         bool isForceBitRate() const { return forceBitRate; }

@@ -17,34 +17,40 @@
 
 #include "inet/linklayer/ieee80211/mac/Ieee80211MacAutoRate.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
+#include "inet/common/ModuleAccess.h"
 
 namespace inet {
 namespace ieee80211 {
 
-Ieee80211MacAutoRate::Ieee80211MacAutoRate(Ieee80211Mac *ieee80211mac, bool forceBitRate, int minSuccessThreshold, int minTimerTimeout, int timerTimeout, int successThreshold, int autoBitrate, double successCoeff, double timerCoeff, int maxSuccessThreshold) :
-        ieee80211mac(ieee80211mac),
-        forceBitRate(forceBitRate),
-        autoBitrate(autoBitrate),
-        successThreshold(successThreshold),
-        timerTimeout(timerTimeout),
-        minSuccessThreshold(minSuccessThreshold),
-        minTimerTimeout(minTimerTimeout)
+Define_Module(Ieee80211MacAutoRate);
+
+void Ieee80211MacAutoRate::initialize(int stage)
 {
-    switch (autoBitrate) {
-        case 0:
-            rateControlMode = RATE_ARF;
-            EV_DEBUG << "MAC Transmission algorithm : ARF Rate" << endl;
-            break;
-        case 1:
-            rateControlMode = RATE_AARF;
-            this->successCoeff = successCoeff;
-            this->timerCoeff = timerCoeff;
-            this->maxSuccessThreshold = maxSuccessThreshold;
-            EV_DEBUG << "MAC Transmission algorithm : AARF Rate" << endl;
-            break;
-        default:
-            throw cRuntimeError("Invalid autoBitrate parameter: '%d'", autoBitrate);
-            break;
+    if (stage == INITSTAGE_LOCAL)
+    {
+        ieee80211Mac = getModuleFromPar<Ieee80211Mac>(par("macModule"), this);
+
+        forceBitRate = par("forceBitRate").boolValue();
+        minSuccessThreshold = par("minSuccessThreshold").longValue();
+        minTimerTimeout = par("timerTimeout").longValue();
+        successThreshold = par("successThreshold").longValue();
+        autoBitrate = par("autoBitrate").longValue();
+        switch (autoBitrate) {
+            case 0:
+                rateControlMode = RATE_ARF;
+                EV_DEBUG << "MAC Transmission algorithm : ARF Rate" << endl;
+                break;
+            case 1:
+                rateControlMode = RATE_AARF;
+                successCoeff = par("successCoeff").doubleValue();
+                timerCoeff = par("timerCoeff").doubleValue();
+                maxSuccessThreshold = par("maxSuccessThreshold").longValue();
+                EV_DEBUG << "MAC Transmission algorithm : AARF Rate" << endl;
+                break;
+            default:
+                throw cRuntimeError("Invalid autoBitrate parameter: '%d'", autoBitrate);
+                break;
+        }
     }
 }
 
@@ -162,14 +168,14 @@ void Ieee80211MacAutoRate::reportDataOk(const Ieee80211ModeSet *modeSet, const I
 {
     const IIeee80211Mode *fasterMode = computeFasterDataFrameMode(modeSet, dataFrameMode);
     if (fasterMode)
-        ieee80211mac->setDataFrameMode(fasterMode);
+        ieee80211Mac->setDataFrameMode(fasterMode);
 }
 
 void Ieee80211MacAutoRate::reportDataFailed(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback)
 {
     const IIeee80211Mode *slowerMode = computeSlowerDataFrameMode(modeSet, dataFrameMode, retryCounter, needNormalFeedback);
     if (slowerMode)
-        ieee80211mac->setDataFrameMode(slowerMode);
+        ieee80211Mac->setDataFrameMode(slowerMode);
 }
 
 } /* namespace ieee80211 */
