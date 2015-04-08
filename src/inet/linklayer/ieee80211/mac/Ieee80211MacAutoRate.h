@@ -38,7 +38,6 @@ class INET_API Ieee80211MacAutoRate
         enum RateControlMode {
             RATE_ARF,    // Auto Rate Fallback
             RATE_AARF,    // Adaptatice ARF
-            RATE_CR,    // Constant Rate
         };
 
     public:

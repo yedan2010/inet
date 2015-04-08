@@ -32,14 +32,10 @@ Ieee80211MacAutoRate::Ieee80211MacAutoRate(Ieee80211Mac *ieee80211mac, bool forc
 {
     switch (autoBitrate) {
         case 0:
-            rateControlMode = RATE_CR;
-            EV_DEBUG << "MAC Transmission algorithm : Constant Rate" << endl;
-            break;
-        case 1:
             rateControlMode = RATE_ARF;
             EV_DEBUG << "MAC Transmission algorithm : ARF Rate" << endl;
             break;
-        case 2:
+        case 1:
             rateControlMode = RATE_AARF;
             this->successCoeff = successCoeff;
             this->timerCoeff = timerCoeff;
@@ -116,8 +112,6 @@ void Ieee80211MacAutoRate::setTimerTimeout(int timerTimout)
 
 const IIeee80211Mode* Ieee80211MacAutoRate::computeFasterDataFrameMode(const Ieee80211ModeSet* modeSet, const IIeee80211Mode* dataFrameMode)
 {
-    if (rateControlMode == RATE_CR)
-        return nullptr;
     successCounter++;
     failedCounter = 0;
     recovery = false;
@@ -133,8 +127,6 @@ const IIeee80211Mode* Ieee80211MacAutoRate::computeFasterDataFrameMode(const Iee
 
 const IIeee80211Mode* Ieee80211MacAutoRate::computeSlowerDataFrameMode(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback)
 {
-    if (rateControlMode == RATE_CR)
-        return nullptr;
      timer++;
      failedCounter++;
      successCounter = 0;

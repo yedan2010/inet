@@ -227,9 +227,9 @@ void Ieee80211Mac::initialize(int stage)
         // configure AutoBit Rate
 
 //        configureAutoBitRate();
-        autoRatePlugin = new Ieee80211MacAutoRate(this, par("forceBitRate").boolValue(), par("minSuccessThreshold").longValue(), par("minTimerTimeout").longValue(),
-                                                  par("timerTimeout").longValue(), par("successThreshold").longValue(), par("autoBitrate").longValue(),
-                                                  par("successCoeff").doubleValue(), par("timerCoeff").doubleValue(), par("maxSuccessThreshold").longValue());
+//        autoRatePlugin = new Ieee80211MacAutoRate(this, par("forceBitRate").boolValue(), par("minSuccessThreshold").longValue(), par("minTimerTimeout").longValue(),
+//                                                  par("timerTimeout").longValue(), par("successThreshold").longValue(), par("autoBitrate").longValue(),
+//                                                  par("successCoeff").doubleValue(), par("timerCoeff").doubleValue(), par("maxSuccessThreshold").longValue());
         //end auto rate code
         EV_DEBUG << " basicBitrate=" << basicBitrate / 1e6 << "Mb ";
         EV_DEBUG << " bitrate=" << bitrate / 1e6 << "Mb IDLE=" << IDLE << " RECEIVE=" << RECEIVE << endl;
@@ -648,13 +648,14 @@ void Ieee80211Mac::handleLowerPacket(cPacket *msg)
             validRecMode = true;
     }
 
-    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_CR) {
+    if (autoRatePlugin == nullptr) {
         if (msg->getControlInfo())
             delete msg->removeControlInfo();
     }
 
     Ieee80211Frame *frame = dynamic_cast<Ieee80211Frame *>(msg);
-    autoRatePlugin->someKindOfFunction1(frame);
+    if (autoRatePlugin)
+        autoRatePlugin->someKindOfFunction1(frame);
     if (frame && throughputTimer)
         recBytesOverPeriod += frame->getByteLength();
 
@@ -1764,7 +1765,7 @@ Ieee80211Frame *Ieee80211Mac::setControlBitrate(Ieee80211Frame *frame)
 
 Ieee80211Frame *Ieee80211Mac::setBitrateFrame(Ieee80211Frame *frame)
 {
-    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_CR && autoRatePlugin->isForceBitRate() == false) {
+    if (autoRatePlugin == nullptr /* TODO: && autoRatePlugin->isForceBitRate() == false*/) {
         if (frame->getControlInfo())
             delete frame->removeControlInfo();
         return frame;
@@ -1804,7 +1805,7 @@ void Ieee80211Mac::retryCurrentTransmission()
     ASSERT(retryCounter() < transmissionLimit - 1);
     getCurrentTransmission()->setRetry(true);
     retryCounter()++;
-    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF || autoRatePlugin->getRateControlMode()== Ieee80211MacAutoRate::RATE_ARF)
+    if (autoRatePlugin)
         autoRatePlugin->reportDataFailed(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
     numRetry()++;
     backoff() = true;
@@ -1836,9 +1837,8 @@ void Ieee80211Mac::resetStateVariables()
 {
     backoffPeriod() = SIMTIME_ZERO;
     retryCounter() = 0;
-    if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF || autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_ARF)
+    if (autoRatePlugin)
         autoRatePlugin->reportDataOk(modeSet, dataFrameMode);
-
     if (!transmissionQueue()->empty()) {
         backoff() = true;
         getCurrentTransmission()->setRetry(false);
