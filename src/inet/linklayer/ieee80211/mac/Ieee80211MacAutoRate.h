@@ -74,8 +74,6 @@ class INET_API Ieee80211MacAutoRate : public cSimpleModule
         virtual void initialize(int stage);
 
     public:
-        Ieee80211MacAutoRate() {}
-
         RateControlMode getRateControlMode() const { return rateControlMode; }
         bool isForceBitRate() const { return forceBitRate; }
         void increaseReceivedThroughput(unsigned int bitLength);
