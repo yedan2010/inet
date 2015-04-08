@@ -100,7 +100,7 @@ void Ieee80211Mac::initialize(int stage)
 
     //TODO: revise it: it's too big; should revise stages, too!!!
     if (stage == INITSTAGE_LOCAL) {
-        autoRatePlugin = dynamic_cast<Ieee80211MacAutoRate *>(getSubmodule("autoRate"));
+        autoRate = dynamic_cast<Ieee80211MacAutoRate *>(getSubmodule("autoRate"));
         int numQueues = 1;
         if (par("EDCA")) {
             const char *classifierClass = par("classifier");
@@ -634,14 +634,14 @@ void Ieee80211Mac::handleLowerPacket(cPacket *msg)
             validRecMode = true;
     }
 
-    if (autoRatePlugin == nullptr) {
+    if (autoRate == nullptr) {
         if (msg->getControlInfo())
             delete msg->removeControlInfo();
     }
 
     Ieee80211Frame *frame = dynamic_cast<Ieee80211Frame *>(msg);
-    if (autoRatePlugin)
-        autoRatePlugin->someKindOfFunction1(frame);
+    if (autoRate)
+        autoRate->someKindOfFunction1(frame);
     if (frame && throughputTimer)
         recBytesOverPeriod += frame->getByteLength();
 
@@ -1751,7 +1751,7 @@ Ieee80211Frame *Ieee80211Mac::setControlBitrate(Ieee80211Frame *frame)
 
 Ieee80211Frame *Ieee80211Mac::setBitrateFrame(Ieee80211Frame *frame)
 {
-    if (autoRatePlugin == nullptr /* TODO: && autoRatePlugin->isForceBitRate() == false*/) {
+    if (autoRate == nullptr /* TODO: && autoRatePlugin->isForceBitRate() == false*/) {
         if (frame->getControlInfo())
             delete frame->removeControlInfo();
         return frame;
@@ -1791,8 +1791,8 @@ void Ieee80211Mac::retryCurrentTransmission()
     ASSERT(retryCounter() < transmissionLimit - 1);
     getCurrentTransmission()->setRetry(true);
     retryCounter()++;
-    if (autoRatePlugin)
-        autoRatePlugin->reportDataFailed(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
+    if (autoRate)
+        autoRate->reportDataFailed(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
     numRetry()++;
     backoff() = true;
     generateBackoffPeriod();
@@ -1823,8 +1823,8 @@ void Ieee80211Mac::resetStateVariables()
 {
     backoffPeriod() = SIMTIME_ZERO;
     retryCounter() = 0;
-    if (autoRatePlugin)
-        autoRatePlugin->reportDataOk(modeSet, dataFrameMode);
+    if (autoRate)
+        autoRate->reportDataOk(modeSet, dataFrameMode);
     if (!transmissionQueue()->empty()) {
         backoff() = true;
         getCurrentTransmission()->setRetry(false);

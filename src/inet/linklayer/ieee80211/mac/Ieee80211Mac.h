@@ -115,7 +115,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     const IIeee80211Mode *basicFrameMode = nullptr;
     const IIeee80211Mode *controlFrameMode = nullptr;
 
-    Ieee80211MacAutoRate *autoRatePlugin = nullptr;
+    Ieee80211MacAutoRate *autoRate = nullptr;
 
     // used to measure the throughput over a period
     uint64_t recBytesOverPeriod = 0;
