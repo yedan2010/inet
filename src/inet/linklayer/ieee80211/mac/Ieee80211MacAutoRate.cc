@@ -16,11 +16,13 @@
 //
 
 #include "inet/linklayer/ieee80211/mac/Ieee80211MacAutoRate.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 
 namespace inet {
 namespace ieee80211 {
 
-Ieee80211MacAutoRate::Ieee80211MacAutoRate(bool forceBitRate, int minSuccessThreshold, int minTimerTimeout, int timerTimeout, int successThreshold, int autoBitrate, double successCoeff, double timerCoeff, int maxSuccessThreshold) :
+Ieee80211MacAutoRate::Ieee80211MacAutoRate(Ieee80211Mac *ieee80211mac, bool forceBitRate, int minSuccessThreshold, int minTimerTimeout, int timerTimeout, int successThreshold, int autoBitrate, double successCoeff, double timerCoeff, int maxSuccessThreshold) :
+        ieee80211mac(ieee80211mac),
         forceBitRate(forceBitRate),
         autoBitrate(autoBitrate),
         successThreshold(successThreshold),
@@ -52,33 +54,40 @@ Ieee80211MacAutoRate::Ieee80211MacAutoRate(bool forceBitRate, int minSuccessThre
 
 void Ieee80211MacAutoRate::increaseReceivedThroughput(unsigned int bitLength)
 {
-    recvdThroughput += ((bitLength / (simTime() - timeStampLastMessageReceived)) / 1000000) / samplingCoeff;
+    recvdThroughput += ((bitLength / (simTime() - timestampLastMessageReceived)) / 1000000) / samplingCoeff;
 }
 
-void Ieee80211MacAutoRate::setLastMessageTimeStamp()
+void Ieee80211MacAutoRate::setLastMessageTimestamp()
 {
-    timeStampLastMessageReceived = simTime();
+    timestampLastMessageReceived = simTime();
 }
 
-void Ieee80211MacAutoRate::someKindOfFunction1(const Ieee80211ReceptionIndication *controlInfo)
+void Ieee80211MacAutoRate::someKindOfFunction1(const Ieee80211Frame* frame)
 {
-    if (contJ % 10 == 0) {
-        snr = _snr;
-        contJ = 0;
-        _snr = 0;
+    const Ieee80211ReceptionIndication *controlInfo = dynamic_cast<const Ieee80211ReceptionIndication *>(frame->getControlInfo());
+    if (controlInfo) {
+        if (contJ % 10 == 0) {
+            snr = _snr;
+            contJ = 0;
+            _snr = 0;
+        }
+        contJ++;
+        _snr += controlInfo->getSnr() / 10;
+        lossRate = controlInfo->getLossRate();
+        delete controlInfo;
     }
-    contJ++;
-    _snr += controlInfo->getSnr() / 10;
-    lossRate = controlInfo->getLossRate();
-}
-
-void Ieee80211MacAutoRate::someKindOfFunction2()
-{
     if (contI % samplingCoeff == 0) {
         contI = 0;
         recvdThroughput = 0;
     }
     contI++;
+    if (getTimestampLastMessageReceived() == SIMTIME_ZERO)
+        setLastMessageTimestamp();
+    else {
+        if (frame)
+            increaseReceivedThroughput(frame->getBitLength());
+        setLastMessageTimestamp();
+    }
 }
 
 void Ieee80211MacAutoRate::reportRecoveryFailure()
@@ -155,6 +164,20 @@ void Ieee80211MacAutoRate::reportFailure()
         setTimerTimeout(minTimerTimeout);
         setSuccessThreshold(minSuccessThreshold);
     }
+}
+
+void Ieee80211MacAutoRate::reportDataOk(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode)
+{
+    const IIeee80211Mode *fasterMode = computeFasterDataFrameMode(modeSet, dataFrameMode);
+    if (fasterMode)
+        ieee80211mac->setDataFrameMode(fasterMode);
+}
+
+void Ieee80211MacAutoRate::reportDataFailed(const Ieee80211ModeSet *modeSet, const IIeee80211Mode *dataFrameMode, unsigned int retryCounter, bool needNormalFeedback)
+{
+    const IIeee80211Mode *slowerMode = computeSlowerDataFrameMode(modeSet, dataFrameMode, retryCounter, needNormalFeedback);
+    if (slowerMode)
+        ieee80211mac->setDataFrameMode(slowerMode);
 }
 
 } /* namespace ieee80211 */

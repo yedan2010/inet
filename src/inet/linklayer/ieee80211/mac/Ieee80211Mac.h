@@ -605,9 +605,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     //@}
     int getTimeout(void);
 
-    virtual void reportDataOk(void);
-    virtual void reportDataFailed(void);
-
     virtual bool needRecoveryFallback(void);
     virtual bool needNormalFallback(void);
 
@@ -644,6 +641,8 @@ class INET_API Ieee80211Mac : public MACProtocolBase
   public:
     virtual State getState() { return static_cast<State>(fsm.getState()); }
     virtual unsigned int getQueueSize() { return transmissionQueueSize(); }
+    void setDataFrameMode(const IIeee80211Mode *dataFrameMode) { this->dataFrameMode = dataFrameMode; }
+
 };
 
 } // namespace ieee80211

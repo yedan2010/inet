@@ -227,7 +227,7 @@ void Ieee80211Mac::initialize(int stage)
         // configure AutoBit Rate
 
 //        configureAutoBitRate();
-        autoRatePlugin = new Ieee80211MacAutoRate(par("forceBitRate").boolValue(), par("minSuccessThreshold").longValue(), par("minTimerTimeout").longValue(),
+        autoRatePlugin = new Ieee80211MacAutoRate(this, par("forceBitRate").boolValue(), par("minSuccessThreshold").longValue(), par("minTimerTimeout").longValue(),
                                                   par("timerTimeout").longValue(), par("successThreshold").longValue(), par("autoBitrate").longValue(),
                                                   par("successCoeff").doubleValue(), par("timerCoeff").doubleValue(), par("maxSuccessThreshold").longValue());
         //end auto rate code
@@ -654,21 +654,7 @@ void Ieee80211Mac::handleLowerPacket(cPacket *msg)
     }
 
     Ieee80211Frame *frame = dynamic_cast<Ieee80211Frame *>(msg);
-
-    if (msg->getControlInfo() && dynamic_cast<Ieee80211ReceptionIndication *>(msg->getControlInfo())) {
-        Ieee80211ReceptionIndication *cinfo = (Ieee80211ReceptionIndication *)msg->removeControlInfo();
-        autoRatePlugin->someKindOfFunction1(cinfo);
-        delete cinfo;
-    }
-    autoRatePlugin->someKindOfFunction2();
-    frame = dynamic_cast<Ieee80211Frame *>(msg);
-    if (autoRatePlugin->getTimeStampLastMessageReceived() == SIMTIME_ZERO)
-        autoRatePlugin->setLastMessageTimeStamp();
-    else {
-        if (frame)
-            autoRatePlugin->increaseReceivedThroughput(frame->getBitLength());
-        autoRatePlugin->setLastMessageTimeStamp();
-    }
+    autoRatePlugin->someKindOfFunction1(frame);
     if (frame && throughputTimer)
         recBytesOverPeriod += frame->getByteLength();
 
@@ -1817,10 +1803,9 @@ void Ieee80211Mac::retryCurrentTransmission()
 {
     ASSERT(retryCounter() < transmissionLimit - 1);
     getCurrentTransmission()->setRetry(true);
+    retryCounter()++;
     if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF || autoRatePlugin->getRateControlMode()== Ieee80211MacAutoRate::RATE_ARF)
-        reportDataFailed();
-    else
-        retryCounter()++;
+        autoRatePlugin->reportDataFailed(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
     numRetry()++;
     backoff() = true;
     generateBackoffPeriod();
@@ -1850,10 +1835,9 @@ void Ieee80211Mac::setMode(Mode mode)
 void Ieee80211Mac::resetStateVariables()
 {
     backoffPeriod() = SIMTIME_ZERO;
+    retryCounter() = 0;
     if (autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_AARF || autoRatePlugin->getRateControlMode() == Ieee80211MacAutoRate::RATE_ARF)
-        reportDataOk();
-    else
-        retryCounter() = 0;
+        autoRatePlugin->reportDataOk(modeSet, dataFrameMode);
 
     if (!transmissionQueue()->empty()) {
         backoff() = true;
@@ -2066,24 +2050,6 @@ void Ieee80211Mac::clearQueue()
             delete msg;
         }
     }
-}
-
-// XXX: computeFasterDataFrameMode()???
-void Ieee80211Mac::reportDataOk()
-{
-    retryCounter() = 0;
-    const IIeee80211Mode *fasterMode = autoRatePlugin->computeFasterDataFrameMode(modeSet, dataFrameMode);
-    if (fasterMode)
-        dataFrameMode = fasterMode;
-}
-
-// XXX: computeSlowerDataFrameMode() ??
-void Ieee80211Mac::reportDataFailed(void)
-{
-    retryCounter()++;
-    const IIeee80211Mode *slowerMode = autoRatePlugin->computeSlowerDataFrameMode(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
-    if (slowerMode)
-        dataFrameMode = slowerMode;
 }
 
 bool Ieee80211Mac::needRecoveryFallback(void)
