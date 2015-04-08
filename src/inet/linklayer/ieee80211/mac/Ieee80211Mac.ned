@@ -59,6 +59,7 @@ import inet.linklayer.ieee80211.mac.Ieee80211MacAutoRate;
 module Ieee80211Mac extends MACProtocolBase like IMACProtocol
 {
     parameters:
+        bool hasAutoRate = default(false);
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by
                                           // a generated MAC address in init stage 0.
@@ -132,6 +133,6 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         lowerLayerOut @labels(Ieee80211Frame);
 
     submodules:
-	    autoRate : Ieee80211MacAutoRate;
+	    autoRate : Ieee80211MacAutoRate if hasAutoRate;
 
 }
