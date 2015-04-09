@@ -1421,28 +1421,19 @@ void Ieee80211Mac::scheduleAckTimeoutPeriod(Ieee80211DataOrMgmtFrame *frameToSen
 //    After transmitting an MPDU that requires an ACK frame as a response (see Annex G), the STA shall wait for an
 //    ACKTimeout interval, with a value of aSIFSTime + aSlotTime + aPHY-RX-START-Delay, starting at the
 //    PHY-TXEND.confirm primitive., p. 834
-    double tim;
-    double bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
-    TransmissionRequest *trq = dynamic_cast<TransmissionRequest *>(frameToSend->getControlInfo());
-    if (trq) {
-        bitRate = trq->getBitrate().get();
-        if (bitRate == 0)
-            bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
-    }
-    if (!endTimeout->isScheduled()) {
-        EV_DEBUG << "scheduling data timeout period\n";
-        if (useModulationParameters) {
-            const IIeee80211Mode *modType = modeSet->getMode(bps(bitRate));
-            double duration = computeFrameDuration(frameToSend);
-            double slot = SIMTIME_DBL(modType->getSlotTime());
-            double sifs = SIMTIME_DBL(modType->getSifsTime());
-            double PHY_RX_START = SIMTIME_DBL(modType->getPhyRxStartDelay());
-            tim = duration + slot + sifs + PHY_RX_START;
-        }
-        else
-            tim = computeFrameDuration(frameToSend) + SIMTIME_DBL( getSlotTime()) +SIMTIME_DBL( getSIFS()) + controlFrameTxTime(LENGTH_ACK) + MAX_PROPAGATION_DELAY * 2;
-        EV_DEBUG << " time out=" << tim*1e6 << "us" << endl;
-        scheduleAt(simTime() + tim, endTimeout);
+//    TransmissionRequest *trq = dynamic_cast<TransmissionRequest *>(frameToSend->getControlInfo());
+//    ???
+//    if (trq) {
+//        bitRate = trq->getBitrate().get();
+//        if (bitRate == 0)
+//            bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
+//    }
+    if (!endTimeout->isScheduled()) { // TODO
+        EV_DEBUG << "Scheduling ACK timeout period" << endl;
+        simtime_t duration = dataFrameMode->getDuration(frameToSend->getBitLength());
+        simtime_t ackTimeout = duration + getSIFS() + getSlotTime() + dataFrameMode->getPhyRxStartDelay();
+        EV_DEBUG << "ACK timeout = " << ackTimeout << " us" << endl;
+        scheduleAt(simTime() + ackTimeout, endTimeout);
     }
 }
 
