@@ -480,7 +480,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     virtual void cancelAIFSPeriod();
 //XXX    virtual void checkInternalColision();
 
-    virtual void scheduleDataTimeoutPeriod(Ieee80211DataOrMgmtFrame *frame);
+    virtual void scheduleAckTimeoutPeriod(Ieee80211DataOrMgmtFrame *frame);
     virtual void scheduleMulticastTimeoutPeriod(Ieee80211DataOrMgmtFrame *frame);
     virtual void cancelTimeoutPeriod();
 

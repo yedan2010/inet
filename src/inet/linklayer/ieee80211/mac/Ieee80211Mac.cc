@@ -965,7 +965,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     );
         }
         FSMA_State(WAITACK) {
-            FSMA_Enter(scheduleDataTimeoutPeriod(getCurrentTransmission()));
+            FSMA_Enter(scheduleAckTimeoutPeriod(getCurrentTransmission()));
 #ifndef DISABLEERRORACK
             FSMA_Event_Transition(Reception - ACK - failed,
                     isLowerMessage(msg) && receptionError && retryCounter(oldcurrentAC) == transmissionLimit - 1,
@@ -1416,8 +1416,11 @@ void Ieee80211Mac::cancelAIFSPeriod()
 //  EV_DEBUG << "We obtain endAIFS, so we have to check if there
 //}
 
-void Ieee80211Mac::scheduleDataTimeoutPeriod(Ieee80211DataOrMgmtFrame *frameToSend)
+void Ieee80211Mac::scheduleAckTimeoutPeriod(Ieee80211DataOrMgmtFrame *frameToSend)
 {
+//    After transmitting an MPDU that requires an ACK frame as a response (see Annex G), the STA shall wait for an
+//    ACKTimeout interval, with a value of aSIFSTime + aSlotTime + aPHY-RX-START-Delay, starting at the
+//    PHY-TXEND.confirm primitive., p. 834
     double tim;
     double bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
     TransmissionRequest *trq = dynamic_cast<TransmissionRequest *>(frameToSend->getControlInfo());
