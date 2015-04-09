@@ -620,8 +620,8 @@ void Ieee80211Mac::handleLowerPacket(cPacket *msg)
     if (cinfo && cinfo->getAirtimeMetric()) {
         double rtsTime = 0;
         if (rtsThreshold * 8 < cinfo->getTestFrameSize())
-             rtsTime = controlFrameTxTime(LENGTH_CTS) + controlFrameTxTime(LENGTH_RTS);
-        double frameDuration = cinfo->getTestFrameDuration() + controlFrameTxTime(LENGTH_ACK) + rtsTime;
+             rtsTime = controlFrameTxTime(LENGTH_CTS).dbl() + controlFrameTxTime(LENGTH_RTS).dbl(); // FIXME: simtime->dbl
+        double frameDuration = cinfo->getTestFrameDuration() + controlFrameTxTime(LENGTH_ACK).dbl() + rtsTime; // FIXME: simtime->dbl
         cinfo->setTestFrameDuration(frameDuration);
     }
     emit(NF_LINK_FULL_PROMISCUOUS, msg);
