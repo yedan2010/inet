@@ -1283,18 +1283,13 @@ void Ieee80211Mac::finishReception()
  */
 simtime_t Ieee80211Mac::getSIFS()
 {
-    if (useModulationParameters)
-        return dataFrameMode->getSifsTime();
-
-    return SIFS;
+    return dataFrameMode->getSifsTime();
 }
 
 simtime_t Ieee80211Mac::getSlotTime()
 {
 // TODO:   return aCCATime() + aRxTxTurnaroundTime + aAirPropagationTime() + aMACProcessingDelay();
-    if (useModulationParameters)
-        return dataFrameMode->getSlotTime();
-    return ST;
+    return dataFrameMode->getSlotTime();
 }
 
 simtime_t Ieee80211Mac::getPIFS()
