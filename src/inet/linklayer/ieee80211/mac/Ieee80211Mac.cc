@@ -63,7 +63,7 @@ Ieee80211Mac::~Ieee80211Mac()
         cancelAndDelete(endSIFS);
     }
     cancelAndDelete(endDIFS);
-    cancelAndDelete(endTimeout);
+    cancelAndDelete(ackTimeout);
     cancelAndDelete(endReserve);
     cancelAndDelete(mediumStateChange);
     cancelAndDelete(endTXOP);
@@ -241,7 +241,7 @@ void Ieee80211Mac::initialize(int stage)
             setEndBackoff(i, new cMessage("Backoff", i));
         }
         endTXOP = new cMessage("TXOP");
-        endTimeout = new cMessage("Timeout");
+        ackTimeout = new cMessage("Timeout");
         endReserve = new cMessage("Reserve");
         mediumStateChange = new cMessage("MediumStateChange");
 
@@ -714,10 +714,10 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
     }
 
     // Special case, is  endTimeout ACK and the radio state  is RECV, the system must wait until end reception (9.3.2.8 ACK procedure)
-    if (msg == endTimeout && radio->getReceptionState() == IRadio::RECEPTION_STATE_RECEIVING && useModulationParameters && fsm.getState() == WAITACK)
+    if (msg == ackTimeout && radio->getReceptionState() == IRadio::RECEPTION_STATE_RECEIVING && useModulationParameters && fsm.getState() == WAITACK)
     {
         EV << "Re-schedule WAITACK timeout \n";
-        scheduleAt(simTime() + controlFrameTxTime(LENGTH_ACK), endTimeout);
+        scheduleAt(simTime() + controlFrameTxTime(LENGTH_ACK), ackTimeout);
         isInHandleWithFSM = false;
         return;
     }
@@ -1077,7 +1077,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     resetCurrentBackOff();
                     );
             FSMA_Event_Transition(Transmit - Data - Failed,
-                    msg == endTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    msg == ackTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
                     IDLE,
                     currentAC = oldcurrentAC;
                     giveUpCurrentTransmission();
@@ -1086,7 +1086,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                         cancelEvent(endTXOP);
                     );
             FSMA_Event_Transition(Receive - ACK - Timeout,
-                    msg == endTimeout,
+                    msg == ackTimeout,
                     DEFER,
                     currentAC = oldcurrentAC;
                     retryCurrentTransmission();
@@ -1129,7 +1129,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
              */
             ///changed
             FSMA_Event_Transition(Transmit - Multicast,
-                    msg == endTimeout,
+                    msg == ackTimeout,
                     DEFER,
                     currentAC = oldcurrentAC;
                     fr = getCurrentTransmission();
@@ -1165,13 +1165,13 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     cancelTimeoutPeriod();
                     );
             FSMA_Event_Transition(Transmit - RTS - Failed,
-                    msg == endTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    msg == ackTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
                     IDLE,
                     currentAC = oldcurrentAC;
                     giveUpCurrentTransmission();
                     );
             FSMA_Event_Transition(Receive - CTS - Timeout,
-                    msg == endTimeout,
+                    msg == ackTimeout,
                     DEFER,
                     currentAC = oldcurrentAC;
                     retryCurrentTransmission();
@@ -1428,35 +1428,35 @@ void Ieee80211Mac::scheduleAckTimeoutPeriod(Ieee80211DataOrMgmtFrame *frameToSen
 //        if (bitRate == 0)
 //            bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
 //    }
-    if (!endTimeout->isScheduled()) { // TODO
+    if (!ackTimeout->isScheduled()) { // TODO
         EV_DEBUG << "Scheduling ACK timeout period" << endl;
         simtime_t duration = dataFrameMode->getDuration(frameToSend->getBitLength());
-        simtime_t ackTimeout = duration + getSIFS() + getSlotTime() + dataFrameMode->getPhyRxStartDelay();
+        simtime_t ackTimeoutInterval = duration + getSIFS() + getSlotTime() + dataFrameMode->getPhyRxStartDelay();
         EV_DEBUG << "ACK timeout = " << ackTimeout << " us" << endl;
-        scheduleAt(simTime() + ackTimeout, endTimeout);
+        scheduleAt(simTime() + ackTimeoutInterval, ackTimeout);
     }
 }
 
 void Ieee80211Mac::scheduleMulticastTimeoutPeriod(Ieee80211DataOrMgmtFrame *frameToSend)
 {
-    if (!endTimeout->isScheduled()) {
+    if (!ackTimeout->isScheduled()) {
         EV_DEBUG << "scheduling multicast timeout period\n";
-        scheduleAt(simTime() + computeFrameDuration(frameToSend), endTimeout);
+        scheduleAt(simTime() + computeFrameDuration(frameToSend), ackTimeout);
     }
 }
 
 void Ieee80211Mac::cancelTimeoutPeriod()
 {
     EV_DEBUG << "canceling timeout period\n";
-    cancelEvent(endTimeout);
+    cancelEvent(ackTimeout);
 }
 
 void Ieee80211Mac::scheduleCTSTimeoutPeriod()
 {
-    if (!endTimeout->isScheduled()) {
+    if (!ackTimeout->isScheduled()) {
         EV_DEBUG << "scheduling CTS timeout period\n";
         scheduleAt(simTime() + controlFrameTxTime(LENGTH_RTS) + getSIFS()
-                   + controlFrameTxTime(LENGTH_CTS) + MAX_PROPAGATION_DELAY * 2, endTimeout);
+                   + controlFrameTxTime(LENGTH_CTS) + MAX_PROPAGATION_DELAY * 2, ackTimeout);
     }
 }
 
@@ -2468,7 +2468,7 @@ void Ieee80211Mac::handleNodeCrash()
 {
     cancelEvent(endSIFS);
     cancelEvent(endDIFS);
-    cancelEvent(endTimeout);
+    cancelEvent(ackTimeout);
     cancelEvent(endReserve);
     cancelEvent(mediumStateChange);
     cancelEvent(endTXOP);

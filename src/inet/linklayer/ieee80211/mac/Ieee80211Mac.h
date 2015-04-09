@@ -363,7 +363,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     //cMessage *endBackoff[4];
 
     /** Timeout after the transmission of an RTS, a CTS, or a DATA frame */
-    cMessage *endTimeout = nullptr;
+    cMessage *ackTimeout = nullptr;
 
     /** End of medium reserve period (NAV) when two other nodes were communicating on the channel */
     cMessage *endReserve = nullptr;
