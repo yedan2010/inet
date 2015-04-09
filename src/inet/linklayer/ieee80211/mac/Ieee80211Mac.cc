@@ -1283,7 +1283,6 @@ void Ieee80211Mac::finishReception()
  */
 simtime_t Ieee80211Mac::getSIFS()
 {
-// TODO:   return aRxRFDelay() + aRxPLCPDelay() + aMACProcessingDelay() + aRxTxTurnaroundTime();
     if (useModulationParameters)
         return dataFrameMode->getSifsTime();
 
