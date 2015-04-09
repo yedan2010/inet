@@ -2432,16 +2432,11 @@ bool Ieee80211Mac::isBackoffPending()
     return false;
 }
 
-double Ieee80211Mac::controlFrameTxTime(int bits)
+simtime_t Ieee80211Mac::controlFrameTxTime(unsigned int dataBitLength)
 {
-     double duration;
-     if (PHY_HEADER_LENGTH < 0)
-         duration = SIMTIME_DBL(controlFrameMode->getDuration(bits));
-     else
-         duration = SIMTIME_DBL(controlFrameMode->getDataMode()->getDuration(bits)) + PHY_HEADER_LENGTH;
-
-     EV_DEBUG << " duration=" << duration*1e6 << "us(" << bits << "bits " << controlFrameMode->getDataMode()->getNetBitrate() << ")" << endl;
-     return duration;
+    simtime_t duration = controlFrameMode->getDuration(dataBitLength);
+    EV_DEBUG << "Control frame duration = " << duration.dbl() << "us (" << dataBitLength << "bits " << controlFrameMode->getDataMode()->getNetBitrate() << ")" << endl;
+    return duration;
 }
 
 bool Ieee80211Mac::handleNodeStart(IDoneCallback *doneCallback)

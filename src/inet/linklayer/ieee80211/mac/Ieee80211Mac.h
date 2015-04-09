@@ -460,7 +460,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     virtual simtime_t getEIFS();
     virtual simtime_t getPIFS();
     virtual simtime_t computeBackoffPeriod(Ieee80211Frame *msg, int r);
-    virtual double controlFrameTxTime(int bits);
+    virtual simtime_t controlFrameTxTime(unsigned int bitLength);
     //@}
 
   protected:
