@@ -1315,7 +1315,10 @@ simtime_t Ieee80211Mac::getAIFS(int AccessCategory)
 
 simtime_t Ieee80211Mac::getEIFS()
 {
-    return getSIFS() + getDIFS() + controlFrameTxTime(LENGTH_ACK);
+    // EIFS = aSIFSTime + DIFS + ACKTxTime, where ACKTxTime is the time expressed in
+    // microseconds required to transmit an ACK frame, including preamble, PLCP header
+    // and any additional PHY dependent information, at the lowest PHY mandatory rate.
+    return getSIFS() + getDIFS() + controlFrameTxTime(LENGTH_ACK); // TODO: Is controlFrameMode always the lowest PHY mandatory mode?
 }
 
 simtime_t Ieee80211Mac::computeBackoffPeriod(Ieee80211Frame *msg, int r)
