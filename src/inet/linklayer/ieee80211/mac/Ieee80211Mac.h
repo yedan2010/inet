@@ -93,7 +93,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase
 
     const IIeee80211Mode *recFrameModulation = nullptr;
     bool validRecMode = false;
-    bool useModulationParameters = false;
     bool prioritizeMulticast = false;
 
   protected:

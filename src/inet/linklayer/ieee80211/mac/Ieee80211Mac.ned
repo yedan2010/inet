@@ -81,7 +81,6 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         // parameters for EDCA = false
         int AIFSN = default(2); // if there is only one AC (EDCA = false)
 
-        bool useModulationParameters = default(false); // if true, slot time, DIFS, and ACK timeout (aPHY-RX-START-Delay) are function of modulation time (2007 standard)
         bool prioritizeMulticast = default(false); // if true, prioritize multicast frames (9.3.2.1 Fundamental access)
 
         double bitrate @unit("bps");

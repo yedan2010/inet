@@ -120,8 +120,6 @@ void Ieee80211Mac::initialize(int stage)
 
         PHY_HEADER_LENGTH = par("phyHeaderLength");    //26us
 
-        useModulationParameters = par("useModulationParameters");
-
         prioritizeMulticast = par("prioritizeMulticast");
 
         EV_DEBUG << "Operating mode: 802.11" << modeSet->getName();
@@ -714,7 +712,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
     }
 
     // Special case, is  endTimeout ACK and the radio state  is RECV, the system must wait until end reception (9.3.2.8 ACK procedure)
-    if (msg == ackTimeout && radio->getReceptionState() == IRadio::RECEPTION_STATE_RECEIVING && useModulationParameters && fsm.getState() == WAITACK)
+    if (msg == ackTimeout && radio->getReceptionState() == IRadio::RECEPTION_STATE_RECEIVING /* TODO: && useModulationParameters */&& fsm.getState() == WAITACK)
     {
         EV << "Re-schedule WAITACK timeout \n";
         scheduleAt(simTime() + controlFrameTxTime(LENGTH_ACK), ackTimeout);
