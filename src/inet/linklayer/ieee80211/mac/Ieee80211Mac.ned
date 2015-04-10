@@ -22,6 +22,7 @@ package inet.linklayer.ieee80211.mac;
 import inet.linklayer.base.MACProtocolBase;
 import inet.linklayer.contract.IMACProtocol;
 import inet.linklayer.ieee80211.mac.Ieee80211MacAutoRate;
+import inet.linklayer.ieee80211.mac.Ieee80211Edca;
 
 //
 // Implementation of the 802.11 MAC protocol. This module is intended
@@ -66,20 +67,20 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         string queueModule = default(""); // name of optional external queue module
         int maxQueueSize = default(50);   // max queue length in frames; only used if queueModule==""
 
-        bool EDCA = default(false); // enable Enhanced Distributed Channel Access (802.11e)
-        // parameters for EDCA = true
-        string classifier = default("Ieee80211eClassifier");
-        int defaultAC = default(0); // the default AC category for frames that cannot be classified
-        int AIFSN0 = default(7); // AIFSN for background
-        int AIFSN1 = default(3); // AIFSN for best effort
-        int AIFSN2 = default(2); // AIFSN for video
-        int AIFSN3 = default(2); // AIFSN for voice
-        double TXOP0 @unit(s) = default(0s);
-        double TXOP1 @unit(s) = default(0s);
-        double TXOP2 @unit(s) = default(3.008ms);
-        double TXOP3 @unit(s) = default(1.504ms);
-        // parameters for EDCA = false
-        int AIFSN = default(2); // if there is only one AC (EDCA = false)
+//        bool EDCA = default(false); // enable Enhanced Distributed Channel Access (802.11e)
+//        // parameters for EDCA = true
+//        string classifier = default("Ieee80211eClassifier");
+//        int defaultAC = default(0); // the default AC category for frames that cannot be classified
+//        int AIFSN0 = default(7); // AIFSN for background
+//        int AIFSN1 = default(3); // AIFSN for best effort
+//        int AIFSN2 = default(2); // AIFSN for video
+//        int AIFSN3 = default(2); // AIFSN for voice
+//        double TXOP0 @unit(s) = default(0s);
+//        double TXOP1 @unit(s) = default(0s);
+//        double TXOP2 @unit(s) = default(3.008ms);
+//        double TXOP3 @unit(s) = default(1.504ms);
+//        // parameters for EDCA = false
+//        int AIFSN = default(2); // if there is only one AC (EDCA = false)
 
         bool prioritizeMulticast = default(false); // if true, prioritize multicast frames (9.3.2.1 Fundamental access)
 
@@ -98,6 +99,8 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         int retryLimit = default(-1); // maximum number of retries per message, -1 means default
         int cwMinData = default(-1); // contention window for normal data frames, -1 means default
         int cwMaxData = default(-1); // contention window for normal data frames, -1 means default
+        edca.cwMinData = cwMinData;
+        edca.cwMaxData = cwMaxData;
         int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
         double phyHeaderLength @unit("s") = default(-1s); // when <0, the MAC will compute it in function of the modulation type
@@ -133,5 +136,6 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
 
     submodules:
 	    autoRate : Ieee80211MacAutoRate if hasAutoRate;
+	    edca : Ieee80211Edca;
 
 }

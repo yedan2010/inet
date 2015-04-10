@@ -67,25 +67,25 @@ Ieee80211Mac::~Ieee80211Mac()
     cancelAndDelete(endReserve);
     cancelAndDelete(mediumStateChange);
     cancelAndDelete(endTXOP);
-    for (unsigned int i = 0; i < edcCAF.size(); i++) {
-        cancelAndDelete(endAIFS(i));
-        cancelAndDelete(endBackoff(i));
-        while (!transmissionQueue(i)->empty()) {
-            Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(transmissionQueue(i)->front());
-            transmissionQueue(i)->pop_front();
-            delete temp;
-        }
-    }
-    edcCAF.clear();
-    for (auto & elem : edcCAFOutVector) {
-        delete elem.jitter;
-        delete elem.macDelay;
-        delete elem.throughput;
-    }
-    edcCAFOutVector.clear();
+//    for (unsigned int i = 0; i < edcCAF.size(); i++) {
+//        cancelAndDelete(endAIFS(i));
+//        cancelAndDelete(endBackoff(i));
+//        while (!transmissionQueue(i)->empty()) {
+//            Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(transmissionQueue(i)->front());
+//            transmissionQueue(i)->pop_front();
+//            delete temp;
+//        }
+//    }
+//    edcCAF.clear();
+//    for (auto & elem : edcCAFOutVector) {
+//        delete elem.jitter;
+//        delete elem.macDelay;
+//        delete elem.throughput;
+//    }
+//    edcCAFOutVector.clear();
     if (pendingRadioConfigMsg)
         delete pendingRadioConfigMsg;
-    delete classifier;
+//    delete classifier;
 }
 
 /****************************************************************
@@ -101,20 +101,21 @@ void Ieee80211Mac::initialize(int stage)
     //TODO: revise it: it's too big; should revise stages, too!!!
     if (stage == INITSTAGE_LOCAL) {
         autoRate = dynamic_cast<Ieee80211MacAutoRate *>(getSubmodule("autoRate"));
+        edca = new Ieee80211Edca(); // TODO: module
         int numQueues = 1;
-        if (par("EDCA")) {
-            const char *classifierClass = par("classifier");
-            classifier = check_and_cast<IQoSClassifier *>(inet::utils::createOne(classifierClass));
-            numQueues = classifier->getNumQueues();
-        }
-
-        for (int i = 0; i < numQueues; i++) {
-            Edca catEdca;
-            catEdca.backoff = false;
-            catEdca.backoffPeriod = -1;
-            catEdca.retryCounter = 0;
-            edcCAF.push_back(catEdca);
-        }
+//        if (par("EDCA")) {
+//            const char *classifierClass = par("classifier");
+//            classifier = check_and_cast<IQoSClassifier *>(inet::utils::createOne(classifierClass));
+//            numQueues = classifier->getNumQueues();
+//        }
+//
+//        for (int i = 0; i < numQueues; i++) {
+//            Edca catEdca;
+//            catEdca.backoff = false;
+//            catEdca.backoffPeriod = -1;
+//            catEdca.retryCounter = 0;
+//            edcCAF.push_back(catEdca);
+//        }
         // initialize parameters
         modeSet = Ieee80211ModeSet::getModeSet(*par("opMode").stringValue());
 
@@ -151,40 +152,40 @@ void Ieee80211Mac::initialize(int stage)
         ASSERT(cwMinMulticast >= 0);
         EV_DEBUG << " cwMinMulticast=" << cwMinMulticast;
 
-        defaultAC = par("defaultAC");
-        if (classifier && dynamic_cast<Ieee80211eClassifier *>(classifier))
-            static_cast<Ieee80211eClassifier *>(classifier)->setDefaultClass(defaultAC);
+//        defaultAC = par("defaultAC");
+//        if (classifier && dynamic_cast<Ieee80211eClassifier *>(classifier))
+//            static_cast<Ieee80211eClassifier *>(classifier)->setDefaultClass(defaultAC);
 
-        for (int i = 0; i < numCategories(); i++) {
-            std::stringstream os;
-            os << i;
-            std::string strAifs = "AIFSN" + os.str();
-            std::string strTxop = "TXOP" + os.str();
-            if (hasPar(strAifs.c_str()) && hasPar(strTxop.c_str())) {
-                AIFSN(i) = par(strAifs.c_str());
-                TXOP(i) = par(strTxop.c_str());
-            }
-            else
-                throw cRuntimeError("parameters %s , %s don't exist", strAifs.c_str(), strTxop.c_str());
-        }
-        if (numCategories() == 1)
-            AIFSN(0) = par("AIFSN");
-
-        for (int i = 0; i < numCategories(); i++) {
-            ASSERT(AIFSN(i) >= 0 && AIFSN(i) < 16);
-            if (i == 0 || i == 1) {
-                cwMin(i) = cwMinData;
-                cwMax(i) = cwMaxData;
-            }
-            if (i == 2) {
-                cwMin(i) = (cwMinData + 1) / 2 - 1;
-                cwMax(i) = cwMinData;
-            }
-            if (i == 3) {
-                cwMin(i) = (cwMinData + 1) / 4 - 1;
-                cwMax(i) = (cwMinData + 1) / 2 - 1;
-            }
-        }
+//        for (int i = 0; i < edca->numCategories(); i++) {
+//            std::stringstream os;
+//            os << i;
+//            std::string strAifs = "AIFSN" + os.str();
+//            std::string strTxop = "TXOP" + os.str();
+//            if (hasPar(strAifs.c_str()) && hasPar(strTxop.c_str())) {
+//                AIFSN(i) = par(strAifs.c_str());
+//                TXOP(i) = par(strTxop.c_str());
+//            }
+//            else
+//                throw cRuntimeError("parameters %s , %s don't exist", strAifs.c_str(), strTxop.c_str());
+//        }
+//        if (edca->numCategories() == 1)
+//            AIFSN(0) = par("AIFSN");
+//
+//        for (int i = 0; i < edca->numCategories(); i++) {
+//            ASSERT(AIFSN(i) >= 0 && AIFSN(i) < 16);
+//            if (i == 0 || i == 1) {
+//                cwMin(i) = cwMinData;
+//                cwMax(i) = cwMaxData;
+//            }
+//            if (i == 2) {
+//                cwMin(i) = (cwMinData + 1) / 2 - 1;
+//                cwMax(i) = cwMinData;
+//            }
+//            if (i == 3) {
+//                cwMin(i) = (cwMinData + 1) / 4 - 1;
+//                cwMax(i) = (cwMinData + 1) / 2 - 1;
+//            }
+//        }
 
         ST = par("slotTime");    //added by sorin
         if (ST == -1)
@@ -234,10 +235,10 @@ void Ieee80211Mac::initialize(int stage)
         // initialize self messages
         endSIFS = new cMessage("SIFS");
         endDIFS = new cMessage("DIFS");
-        for (int i = 0; i < numCategories(); i++) {
-            setEndAIFS(i, new cMessage("AIFS", i));
-            setEndBackoff(i, new cMessage("Backoff", i));
-        }
+//        for (int i = 0; i < edca->numCategories(); i++) {
+//            setEndAIFS(i, new cMessage("AIFS", i));
+//            setEndBackoff(i, new cMessage("Backoff", i));
+//        }
         endTXOP = new cMessage("TXOP");
         ackTimeout = new cMessage("Timeout");
         endReserve = new cMessage("Reserve");
@@ -251,25 +252,25 @@ void Ieee80211Mac::initialize(int stage)
         mode = DCF;
         sequenceNumber = 0;
 
-        currentAC = 0;
-        oldcurrentAC = 0;
+//        currentAC = 0;
+//        edca->getOldcurrentAc() = 0;
         lastReceiveFailed = false;
-        for (int i = 0; i < numCategories(); i++)
-            numDropped(i) = 0;
+//        for (int i = 0; i < edca->numCategories(); i++)
+//            numDropped(i) = 0;
         nav = false;
         txop = false;
         last = 0;
 
         // statistics
-        for (int i = 0; i < numCategories(); i++) {
-            numRetry(i) = 0;
-            numSentWithoutRetry(i) = 0;
-            numGivenUp(i) = 0;
-            numSent(i) = 0;
-            bits(i) = 0;
-            maxJitter(i) = SIMTIME_ZERO;
-            minJitter(i) = SIMTIME_ZERO;
-        }
+//        for (int i = 0; i < edca->numCategories(); i++) {
+//            numRetry(i) = 0;
+//            numSentWithoutRetry(i) = 0;
+//            numGivenUp(i) = 0;
+//            numSent(i) = 0;
+//            bits(i) = 0;
+//            maxJitter(i) = SIMTIME_ZERO;
+//            minJitter(i) = SIMTIME_ZERO;
+//        }
 
         numCollision = 0;
         numInternalCollision = 0;
@@ -283,18 +284,18 @@ void Ieee80211Mac::initialize(int stage)
 
         stateVector.setName("State");
         stateVector.setEnum("inet::Ieee80211Mac");
-        for (int i = 0; i < numCategories(); i++) {
-            EdcaOutVector outVectors;
-            std::stringstream os;
-            os << i;
-            std::string th = "throughput AC" + os.str();
-            std::string delay = "Mac delay AC" + os.str();
-            std::string jit = "jitter AC" + os.str();
-            outVectors.jitter = new cOutVector(jit.c_str());
-            outVectors.throughput = new cOutVector(th.c_str());
-            outVectors.macDelay = new cOutVector(delay.c_str());
-            edcCAFOutVector.push_back(outVectors);
-        }
+//        for (int i = 0; i < edca->numCategories(); i++) {
+//            EdcaOutVector outVectors;
+//            std::stringstream os;
+//            os << i;
+//            std::string th = "throughput AC" + os.str();
+//            std::string delay = "Mac delay AC" + os.str();
+//            std::string jit = "jitter AC" + os.str();
+//            outVectors.jitter = new cOutVector(jit.c_str());
+//            outVectors.throughput = new cOutVector(th.c_str());
+//            outVectors.macDelay = new cOutVector(delay.c_str());
+//            edcCAFOutVector.push_back(outVectors);
+//        }
         // Code to compute the throughput over a period of time
         throughputTimePeriod = par("throughputTimePeriod");
         recBytesOverPeriod = 0;
@@ -328,35 +329,35 @@ void Ieee80211Mac::initWatches()
 {
 // initialize watches
     WATCH(fsm);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].retryCounter);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].backoff);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].backoffPeriod);
-    WATCH(currentAC);
-    WATCH(oldcurrentAC);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH_LIST(edcCAF[i].transmissionQueue);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].retryCounter);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].backoff);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].backoffPeriod);
+//    WATCH(currentAC);
+//    WATCH(edca->getOldcurrentAc());
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH_LIST(edcCAF[i].transmissionQueue);
     WATCH(nav);
     WATCH(txop);
 
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].numRetry);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].numSentWithoutRetry);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].numGivenUp);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].numRetry);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].numSentWithoutRetry);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].numGivenUp);
     WATCH(numCollision);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].numSent);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].numSent);
     WATCH(numBits);
     WATCH(numSentTXOP);
     WATCH(numReceived);
     WATCH(numSentMulticast);
     WATCH(numReceivedMulticast);
-    for (int i = 0; i < numCategories(); i++)
-        WATCH(edcCAF[i].numDropped);
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        WATCH(edcCAF[i].numDropped);
     if (throughputTimer)
         WATCH(throughputLastPeriod);
 }
@@ -366,38 +367,38 @@ void Ieee80211Mac::finish()
     recordScalar("number of received packets", numReceived);
     recordScalar("number of collisions", numCollision);
     recordScalar("number of internal collisions", numInternalCollision);
-    for (int i = 0; i < numCategories(); i++) {
-        std::stringstream os;
-        os << i;
-        std::string th = "number of retry for AC " + os.str();
-        recordScalar(th.c_str(), numRetry(i));
-    }
+//    for (int i = 0; i < edca->numCategories(); i++) {
+//        std::stringstream os;
+//        os << i;
+//        std::string th = "number of retry for AC " + os.str();
+//        recordScalar(th.c_str(), numRetry(i));
+//    }
     recordScalar("sent and received bits", numBits);
-    for (int i = 0; i < numCategories(); i++) {
-        std::stringstream os;
-        os << i;
-        std::string th = "sent packet within AC " + os.str();
-        recordScalar(th.c_str(), numSent(i));
-    }
+//    for (int i = 0; i < edca->numCategories(); i++) {
+//        std::stringstream os;
+//        os << i;
+//        std::string th = "sent packet within AC " + os.str();
+//        recordScalar(th.c_str(), numSent(i));
+//    }
     recordScalar("sent in TXOP ", numSentTXOP);
-    for (int i = 0; i < numCategories(); i++) {
-        std::stringstream os;
-        os << i;
-        std::string th = "sentWithoutRetry AC " + os.str();
-        recordScalar(th.c_str(), numSentWithoutRetry(i));
-    }
-    for (int i = 0; i < numCategories(); i++) {
-        std::stringstream os;
-        os << i;
-        std::string th = "numGivenUp AC " + os.str();
-        recordScalar(th.c_str(), numGivenUp(i));
-    }
-    for (int i = 0; i < numCategories(); i++) {
-        std::stringstream os;
-        os << i;
-        std::string th = "numDropped AC " + os.str();
-        recordScalar(th.c_str(), numDropped(i));
-    }
+//    for (int i = 0; i < edca->numCategories(); i++) {
+//        std::stringstream os;
+//        os << i;
+//        std::string th = "sentWithoutRetry AC " + os.str();
+//        recordScalar(th.c_str(), numSentWithoutRetry(i));
+//    }
+//    for (int i = 0; i < edca->numCategories(); i++) {
+//        std::stringstream os;
+//        os << i;
+//        std::string th = "numGivenUp AC " + os.str();
+//        recordScalar(th.c_str(), numGivenUp(i));
+//    }
+//    for (int i = 0; i < edca->numCategories(); i++) {
+//        std::stringstream os;
+//        os << i;
+//        std::string th = "numDropped AC " + os.str();
+//        recordScalar(th.c_str(), numDropped(i));
+//    }
 }
 
 InterfaceEntry *Ieee80211Mac::createInterfaceEntry()
@@ -451,46 +452,46 @@ void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 
     if (msg == endTXOP)
         txop = false;
-
-    if (!strcmp(msg->getName(), "AIFS") || !strcmp(msg->getName(), "Backoff")) {
-        EV_DEBUG << "Changing currentAC to " << msg->getKind() << endl;
-        currentAC = msg->getKind();
-    }
-    //check internal collision
-    if ((strcmp(msg->getName(), "Backoff") == 0) || (strcmp(msg->getName(), "AIFS") == 0)) {
-        int kind;
-        kind = msg->getKind();
-        if (kind < 0)
-            kind = 0;
-        EV_DEBUG << " kind is " << kind << ",name is " << msg->getName() << endl;
-        for (unsigned int i = numCategories() - 1; (int)i > kind; i--) {    //mozna prochaze jen 3..kind XXX
-            if (((endBackoff(i)->isScheduled() && endBackoff(i)->getArrivalTime() == simTime())
-                 || (endAIFS(i)->isScheduled() && !backoff(i) && endAIFS(i)->getArrivalTime() == simTime()))
-                && !transmissionQueue(i)->empty())
-            {
-                EV_DEBUG << "Internal collision AC" << kind << " with AC" << i << endl;
-                numInternalCollision++;
-                EV_DEBUG << "Cancel backoff event and schedule new one for AC" << kind << endl;
-                cancelEvent(endBackoff(kind));
-                if (retryCounter() == transmissionLimit - 1) {
-                    EV_WARN << "give up transmission for AC" << currentAC << endl;
-                    giveUpCurrentTransmission();
-                }
-                else {
-                    EV_WARN << "retry transmission for AC" << currentAC << endl;
-                    retryCurrentTransmission();
-                }
-                return;
-            }
-        }
-        currentAC = kind;
-    }
+//
+//    if (!strcmp(msg->getName(), "AIFS") || !strcmp(msg->getName(), "Backoff")) {
+//        EV_DEBUG << "Changing currentAC to " << msg->getKind() << endl;
+//        currentAC = msg->getKind();
+//    }
+//    //check internal collision
+//    if ((strcmp(msg->getName(), "Backoff") == 0) || (strcmp(msg->getName(), "AIFS") == 0)) {
+//        int kind;
+//        kind = msg->getKind();
+//        if (kind < 0)
+//            kind = 0;
+//        EV_DEBUG << " kind is " << kind << ",name is " << msg->getName() << endl;
+//        for (unsigned int i = edca->numCategories() - 1; (int)i > kind; i--) {    //mozna prochaze jen 3..kind XXX
+//            if (((endBackoff(i)->isScheduled() && endBackoff(i)->getArrivalTime() == simTime())
+//                 || (endAIFS(i)->isScheduled() && !backoff(i) && endAIFS(i)->getArrivalTime() == simTime()))
+//                && !transmissionQueue(i)->empty())
+//            {
+//                EV_DEBUG << "Internal collision AC" << kind << " with AC" << i << endl;
+//                numInternalCollision++;
+//                EV_DEBUG << "Cancel backoff event and schedule new one for AC" << kind << endl;
+//                cancelEvent(endBackoff(kind));
+//                if (edca->retryCounter() == transmissionLimit - 1) {
+//                    EV_WARN << "give up transmission for AC" << currentAC << endl;
+//                    giveUpCurrentTransmission();
+//                }
+//                else {
+//                    EV_WARN << "retry transmission for AC" << currentAC << endl;
+//                    retryCurrentTransmission();
+//                }
+//                return;
+//            }
+//        }
+//        currentAC = kind;
+//    }
     handleWithFSM(msg);
 }
 
 void Ieee80211Mac::handleUpperPacket(cPacket *msg)
 {
-    if (queueModule && numCategories() > 1 && (int)transmissionQueueSize() < maxQueueSize) {
+    if (queueModule && edca->numCategories() > 1 && (int)edca->transmissionQueueSize() < maxQueueSize) {
         // the module are continuously asking for packets, except if the queue is full
         EV_DEBUG << "requesting another frame from queue module\n";
         queueModule->requestPacket();
@@ -517,7 +518,7 @@ void Ieee80211Mac::handleUpperPacket(cPacket *msg)
     frame->setSequenceNumber(sequenceNumber);
     sequenceNumber = (sequenceNumber + 1) % 4096;    //XXX seqNum must be checked upon reception of frames!
 
-    if (mappingAccessCategory(frame) == 200) {
+    if (edca->mappingAccessCategory(frame) == 200) {
         // if function mappingAccessCategory() returns 200, it means transsmissionQueue is full
         return;
     }
@@ -525,55 +526,55 @@ void Ieee80211Mac::handleUpperPacket(cPacket *msg)
     handleWithFSM(frame);
 }
 
-int Ieee80211Mac::mappingAccessCategory(Ieee80211DataOrMgmtFrame *frame)
-{
-    bool isDataFrame = (dynamic_cast<Ieee80211DataFrame *>(frame) != nullptr);
-
-    currentAC = classifier ? classifier->classifyPacket(frame) : 0;
-
-    // check for queue overflow
-    if (isDataFrame && maxQueueSize && (int)transmissionQueueSize() >= maxQueueSize) {
-        EV_WARN << "message " << frame << " received from higher layer but AC queue is full, dropping message\n";
-        numDropped()++;
-        delete frame;
-        return 200;
-    }
-    if (isDataFrame) {
-        if (!prioritizeMulticast || !frame->getReceiverAddress().isMulticast() || transmissionQueue()->size() < 2)
-            transmissionQueue()->push_back(frame);
-        else {
-            // current frame is multicast, insert it prior to any unicast dataframe
-            ASSERT(transmissionQueue()->size() >= 2);
-            auto p = transmissionQueue()->end();
-            --p;
-            while (p != transmissionQueue()->begin()) {
-                if (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)
-                    break;  // management frame
-                if ((*p)->getReceiverAddress().isMulticast())
-                    break;  // multicast frame
-                --p;
-            }
-            ++p;
-            transmissionQueue()->insert(p, frame);
-        }
-    }
-    else {
-        if (transmissionQueue()->size() < 2) {
-            transmissionQueue()->push_back(frame);
-        }
-        else {
-            //we don't know if first frame in the queue is in middle of transmission
-            //so for sure we placed it on second place
-            auto p = transmissionQueue()->begin();
-            p++;
-            while ((p != transmissionQueue()->end()) && (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)) // search the first not management frame
-                p++;
-            transmissionQueue()->insert(p, frame);
-        }
-    }
-    EV_DEBUG << "frame classified as access category " << currentAC << " (0 background, 1 best effort, 2 video, 3 voice)\n";
-    return true;
-}
+//int Ieee80211Mac::mappingAccessCategory(Ieee80211DataOrMgmtFrame *frame)
+//{
+//    bool isDataFrame = (dynamic_cast<Ieee80211DataFrame *>(frame) != nullptr);
+//
+//    edca->getCurrentAc() = classifier ? classifier->classifyPacket(frame) : 0;
+//
+//    // check for queue overflow
+//    if (isDataFrame && maxQueueSize && (int)transmissionQueueSize() >= maxQueueSize) {
+//        EV_WARN << "message " << frame << " received from higher layer but AC queue is full, dropping message\n";
+//        edca->numDropped()++;
+//        delete frame;
+//        return 200;
+//    }
+//    if (isDataFrame) {
+//        if (!prioritizeMulticast || !frame->getReceiverAddress().isMulticast() || edca->transmissionQueue()->size() < 2)
+//            edca->transmissionQueue()->push_back(frame);
+//        else {
+//            // current frame is multicast, insert it prior to any unicast dataframe
+//            ASSERT(edca->transmissionQueue()->size() >= 2);
+//            auto p = edca->transmissionQueue()->end();
+//            --p;
+//            while (p != edca->transmissionQueue()->begin()) {
+//                if (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)
+//                    break;  // management frame
+//                if ((*p)->getReceiverAddress().isMulticast())
+//                    break;  // multicast frame
+//                --p;
+//            }
+//            ++p;
+//            edca->transmissionQueue()->insert(p, frame);
+//        }
+//    }
+//    else {
+//        if (edca->transmissionQueue()->size() < 2) {
+//            edca->transmissionQueue()->push_back(frame);
+//        }
+//        else {
+//            //we don't know if first frame in the queue is in middle of transmission
+//            //so for sure we placed it on second place
+//            auto p = edca->transmissionQueue()->begin();
+//            p++;
+//            while ((p != edca->transmissionQueue()->end()) && (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)) // search the first not management frame
+//                p++;
+//            edca->transmissionQueue()->insert(p, frame);
+//        }
+//    }
+//    EV_DEBUG << "frame classified as access category " << currentAC << " (0 background, 1 best effort, 2 video, 3 voice)\n";
+//    return true;
+//}
 
 void Ieee80211Mac::handleUpperCommand(cMessage *msg)
 {
@@ -693,18 +694,18 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
         if (fsm.getState() == WAITAIFS && endDIFS->isScheduled()) {
             // a difs was schedule because all queues ware empty
             // change difs for aifs
-            simtime_t remaint = getAIFS(currentAC) - getDIFS();
-            scheduleAt(endDIFS->getArrivalTime() + remaint, endAIFS(currentAC));
+            simtime_t remaint = getAIFS(edca->getCurrentAc()) - getDIFS();
+            scheduleAt(endDIFS->getArrivalTime() + remaint, edca->endAIFS(edca->getCurrentAc()));
             cancelEvent(endDIFS);
         }
-        else if (fsm.getState() == BACKOFF && endBackoff(numCategories() - 1)->isScheduled() && transmissionQueue(numCategories() - 1)->empty()) {
+        else if (fsm.getState() == BACKOFF && edca->endBackoff(edca->numCategories() - 1)->isScheduled() && edca->transmissionQueue(edca->numCategories() - 1)->empty()) {
             // a backoff was schedule with all the queues empty
             // reschedule the backoff with the appropriate AC
-            backoffPeriod(currentAC) = backoffPeriod(numCategories() - 1);
-            backoff(currentAC) = backoff(numCategories() - 1);
-            backoff(numCategories() - 1) = false;
-            scheduleAt(endBackoff(numCategories() - 1)->getArrivalTime(), endBackoff(currentAC));
-            cancelEvent(endBackoff(numCategories() - 1));
+            edca->backoffPeriod(edca->getCurrentAc()) = edca->backoffPeriod(edca->numCategories() - 1);
+            edca->backoff(edca->getCurrentAc()) = edca->backoff(edca->numCategories() - 1);
+            edca->backoff(edca->numCategories() - 1) = false;
+            scheduleAt(edca->endBackoff(edca->numCategories() - 1)->getArrivalTime(), edca->endBackoff(edca->getCurrentAc()));
+            cancelEvent(edca->endBackoff(edca->numCategories() - 1));
         }
         EV_DEBUG << "deferring upper message transmission in " << fsm.getStateName() << " state\n";
         isInHandleWithFSM = false;
@@ -760,11 +761,11 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Data - Ready,
                     isUpperMessage(msg),
                     DEFER,
-                    ASSERT(isInvalidBackoffPeriod() || backoffPeriod() == SIMTIME_ZERO);
+                    ASSERT(isInvalidBackoffPeriod() || edca->backoffPeriod() == SIMTIME_ZERO);
                     invalidateBackoffPeriod();
                     );
             FSMA_No_Event_Transition(Immediate - Data - Ready,
-                    !transmissionQueueEmpty(),
+                    !edca->transmissionQueueEmpty(),
                     DEFER,
                     );
             FSMA_Event_Transition(Receive,
@@ -794,31 +795,31 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Enter(scheduleAIFSPeriod());
 
             FSMA_Event_Transition(EDCAF - Do - Nothing,
-                    isMsgAIFS(msg) && transmissionQueue()->empty(),
+                    isMsgAIFS(msg) && edca->transmissionQueue()->empty(),
                     WAITAIFS,
                     ASSERT(0 == 1);
                     ;
                     );
             FSMA_Event_Transition(Immediate - Transmit - RTS,
-                    isMsgAIFS(msg) && !transmissionQueue()->empty() && !isMulticast(getCurrentTransmission())
-                    && getCurrentTransmission()->getByteLength() >= rtsThreshold && !backoff(),
+                    isMsgAIFS(msg) && !edca->transmissionQueue()->empty() && !isMulticast(edca->getCurrentTransmission())
+                    && edca->getCurrentTransmission()->getByteLength() >= rtsThreshold && !edca->backoff(),
                     WAITCTS,
-                    sendRTSFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendRTSFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     );
             FSMA_Event_Transition(Immediate - Transmit - Multicast,
-                    isMsgAIFS(msg) && isMulticast(getCurrentTransmission()) && !backoff(),
+                    isMsgAIFS(msg) && isMulticast(edca->getCurrentTransmission()) && !edca->backoff(),
                     WAITMULTICAST,
-                    sendMulticastFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendMulticastFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     );
             FSMA_Event_Transition(Immediate - Transmit - Data,
-                    isMsgAIFS(msg) && !isMulticast(getCurrentTransmission()) && !backoff(),
+                    isMsgAIFS(msg) && !isMulticast(edca->getCurrentTransmission()) && !edca->backoff(),
                     WAITACK,
-                    sendDataFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendDataFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     );
             /*FSMA_Event_Transition(AIFS-Over,
@@ -835,18 +836,18 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     );
             // end the difs and no other packet has been received
             FSMA_Event_Transition(DIFS - Over,
-                    msg == endDIFS && transmissionQueueEmpty(),
+                    msg == endDIFS && edca->transmissionQueueEmpty(),
                     BACKOFF,
-                    currentAC = numCategories() - 1;
+                    edca->setCurrentAc(edca->numCategories() - 1);
                     if (isInvalidBackoffPeriod())
                         generateBackoffPeriod();
                     );
             FSMA_Event_Transition(DIFS - Over,
                     msg == endDIFS,
                     BACKOFF,
-                    for (int i = numCategories() - 1; i >= 0; i--) {
-                        if (!transmissionQueue(i)->empty()) {
-                            currentAC = i;
+                    for (int i = edca->numCategories() - 1; i >= 0; i--) {
+                        if (!edca->transmissionQueue(i)->empty()) {
+                            edca->setCurrentAc(i);
                         }
                     }
                     if (isInvalidBackoffPeriod())
@@ -855,23 +856,23 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Busy,
                     isMediumStateChange(msg) && !isMediumFree(),
                     DEFER,
-                    for (int i = 0; i < numCategories(); i++) {
-                        if (endAIFS(i)->isScheduled())
-                            backoff(i) = true;
+                    for (int i = 0; i < edca->numCategories(); i++) {
+                        if (edca->endAIFS(i)->isScheduled())
+                            edca->backoff(i) = true;
                     }
                     if (endDIFS->isScheduled())
-                        backoff(numCategories() - 1) = true;
+                        edca->backoff(edca->numCategories() - 1) = true;
                     cancelAIFSPeriod();
                     );
             FSMA_No_Event_Transition(Immediate - Busy,
                     !isMediumFree(),
                     DEFER,
-                    for (int i = 0; i < numCategories(); i++) {
-                        if (endAIFS(i)->isScheduled())
-                            backoff(i) = true;
+                    for (int i = 0; i < edca->numCategories(); i++) {
+                        if (edca->endAIFS(i)->isScheduled())
+                            edca->backoff(i) = true;
                     }
                     if (endDIFS->isScheduled())
-                        backoff(numCategories() - 1) = true;
+                        edca->backoff(edca->numCategories() - 1) = true;
                     cancelAIFSPeriod();
 
                     );
@@ -885,72 +886,72 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
         }
         FSMA_State(BACKOFF) {
             FSMA_Enter(scheduleBackoffPeriod());
-            if (getCurrentTransmission()) {
+            if (edca->getCurrentTransmission()) {
                 FSMA_Event_Transition(Transmit - RTS,
-                        msg == endBackoff() && !isMulticast(getCurrentTransmission())
-                        && getCurrentTransmission()->getByteLength() >= rtsThreshold,
+                        msg == edca->endBackoff() && !isMulticast(edca->getCurrentTransmission())
+                        && edca->getCurrentTransmission()->getByteLength() >= rtsThreshold,
                         WAITCTS,
-                        sendRTSFrame(getCurrentTransmission());
-                        oldcurrentAC = currentAC;
+                        sendRTSFrame(edca->getCurrentTransmission());
+                        edca->setOldCurrentAc(edca->getCurrentAc());
                         cancelAIFSPeriod();
                         decreaseBackoffPeriod();
                         cancelBackoffPeriod();
                         );
                 FSMA_Event_Transition(Transmit - Multicast,
-                        msg == endBackoff() && isMulticast(getCurrentTransmission()),
+                        msg == edca->endBackoff() && isMulticast(edca->getCurrentTransmission()),
                         WAITMULTICAST,
-                        sendMulticastFrame(getCurrentTransmission());
-                        oldcurrentAC = currentAC;
+                        sendMulticastFrame(edca->getCurrentTransmission());
+                        edca->setOldCurrentAc(edca->getCurrentAc());
                         cancelAIFSPeriod();
                         decreaseBackoffPeriod();
                         cancelBackoffPeriod();
                         );
                 FSMA_Event_Transition(Transmit - Data,
-                        msg == endBackoff() && !isMulticast(getCurrentTransmission()),
+                        msg == edca->endBackoff() && !isMulticast(edca->getCurrentTransmission()),
                         WAITACK,
-                        sendDataFrame(getCurrentTransmission());
-                        oldcurrentAC = currentAC;
+                        sendDataFrame(edca->getCurrentTransmission());
+                        edca->setOldCurrentAc(edca->getCurrentAc());
                         cancelAIFSPeriod();
                         decreaseBackoffPeriod();
                         cancelBackoffPeriod();
                         );
             }
             FSMA_Event_Transition(AIFS - Over - backoff,
-                    isMsgAIFS(msg) && backoff(),
+                    isMsgAIFS(msg) && edca->backoff(),
                     BACKOFF,
                     if (isInvalidBackoffPeriod())
                         generateBackoffPeriod();
                     );
             FSMA_Event_Transition(AIFS - Immediate - Transmit - RTS,
-                    isMsgAIFS(msg) && !transmissionQueue()->empty() && !isMulticast(getCurrentTransmission())
-                    && getCurrentTransmission()->getByteLength() >= rtsThreshold && !backoff(),
+                    isMsgAIFS(msg) && !edca->transmissionQueue()->empty() && !isMulticast(edca->getCurrentTransmission())
+                    && edca->getCurrentTransmission()->getByteLength() >= rtsThreshold && !edca->backoff(),
                     WAITCTS,
-                    sendRTSFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendRTSFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     decreaseBackoffPeriod();
                     cancelBackoffPeriod();
                     );
             FSMA_Event_Transition(AIFS - Immediate - Transmit - Multicast,
-                    isMsgAIFS(msg) && isMulticast(getCurrentTransmission()) && !backoff(),
+                    isMsgAIFS(msg) && isMulticast(edca->getCurrentTransmission()) && !edca->backoff(),
                     WAITMULTICAST,
-                    sendMulticastFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendMulticastFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     decreaseBackoffPeriod();
                     cancelBackoffPeriod();
                     );
             FSMA_Event_Transition(AIFS - Immediate - Transmit - Data,
-                    isMsgAIFS(msg) && !isMulticast(getCurrentTransmission()) && !backoff(),
+                    isMsgAIFS(msg) && !isMulticast(edca->getCurrentTransmission()) && !edca->backoff(),
                     WAITACK,
-                    sendDataFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendDataFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     cancelAIFSPeriod();
                     decreaseBackoffPeriod();
                     cancelBackoffPeriod();
                     );
             FSMA_Event_Transition(Backoff - Idle,
-                    isBackoffMsg(msg) && transmissionQueueEmpty(),
+                    edca->isBackoffMsg(msg) && edca->transmissionQueueEmpty(),
                     IDLE,
                     resetStateVariables();
                     );
@@ -963,12 +964,12 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     );
         }
         FSMA_State(WAITACK) {
-            FSMA_Enter(scheduleAckTimeoutPeriod(getCurrentTransmission()));
+            FSMA_Enter(scheduleAckTimeoutPeriod(edca->getCurrentTransmission()));
 #ifndef DISABLEERRORACK
             FSMA_Event_Transition(Reception - ACK - failed,
-                    isLowerMessage(msg) && receptionError && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    isLowerMessage(msg) && receptionError && edca->retryCounter(edca->getOldCurrentAc()) == transmissionLimit - 1,
                     IDLE,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     cancelTimeoutPeriod();
                     giveUpCurrentTransmission();
                     txop = false;
@@ -978,7 +979,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Reception - ACK - error,
                     isLowerMessage(msg) && receptionError,
                     DEFER,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     cancelTimeoutPeriod();
                     retryCurrentTransmission();
                     txop = false;
@@ -987,21 +988,21 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     );
 #endif // ifndef DISABLEERRORACK
             FSMA_Event_Transition(Receive - ACK - TXOP - Empty,
-                    isLowerMessage(msg) && isForUs(frame) && frameType == ST_ACK && txop && transmissionQueue(oldcurrentAC)->size() == 1,
+                    isLowerMessage(msg) && isForUs(frame) && frameType == ST_ACK && txop && edca->transmissionQueue(edca->getOldCurrentAc())->size() == 1,
                     DEFER,
-                    currentAC = oldcurrentAC;
-                    if (retryCounter() == 0)
-                        numSentWithoutRetry()++;
-                    numSent()++;
-                    fr = getCurrentTransmission();
+                    edca->setCurrentAc(edca->getOldCurrentAc());
+                    if (edca->retryCounter() == 0)
+                        edca->numSentWithoutRetry()++;
+                    edca->numSent()++;
+                    fr = edca->getCurrentTransmission();
                     numBits += fr->getBitLength();
-                    bits() += fr->getBitLength();
-                    macDelay()->record(simTime() - fr->getMACArrive());
-                    if (maxJitter() == SIMTIME_ZERO || maxJitter() < (simTime() - fr->getMACArrive()))
-                        maxJitter() = simTime() - fr->getMACArrive();
-                    if (minJitter() == SIMTIME_ZERO || minJitter() > (simTime() - fr->getMACArrive()))
-                        minJitter() = simTime() - fr->getMACArrive();
-                    EV_DEBUG << "record macDelay AC" << currentAC << " value " << simTime() - fr->getMACArrive() << endl;
+                    edca->bits() += fr->getBitLength();
+                    edca->macDelay()->record(simTime() - fr->getMACArrive());
+                    if (edca->maxJitter() == SIMTIME_ZERO || edca->maxJitter() < (simTime() - fr->getMACArrive()))
+                        edca->maxJitter() = simTime() - fr->getMACArrive();
+                    if (edca->minJitter() == SIMTIME_ZERO || edca->minJitter() > (simTime() - fr->getMACArrive()))
+                        edca->minJitter() = simTime() - fr->getMACArrive();
+                    EV_DEBUG << "record macDelay AC" << edca->getCurrentAc() << " value " << simTime() - fr->getMACArrive() << endl;
                     numSentTXOP++;
                     cancelTimeoutPeriod();
                     finishCurrentTransmission();
@@ -1013,20 +1014,20 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Receive - ACK - TXOP,
                     isLowerMessage(msg) && isForUs(frame) && frameType == ST_ACK && txop,
                     WAITSIFS,
-                    currentAC = oldcurrentAC;
-                    if (retryCounter() == 0)
-                        numSentWithoutRetry()++;
-                    numSent()++;
-                    fr = getCurrentTransmission();
+                    edca->setCurrentAc(edca->getOldCurrentAc());
+                    if (edca->retryCounter() == 0)
+                        edca->numSentWithoutRetry()++;
+                    edca->numSent()++;
+                    fr = edca->getCurrentTransmission();
                     numBits += fr->getBitLength();
-                    bits() += fr->getBitLength();
+                    edca->bits() += fr->getBitLength();
 
-                    macDelay()->record(simTime() - fr->getMACArrive());
-                    if (maxJitter() == SIMTIME_ZERO || maxJitter() < (simTime() - fr->getMACArrive()))
-                        maxJitter() = simTime() - fr->getMACArrive();
-                    if (minJitter() == SIMTIME_ZERO || minJitter() > (simTime() - fr->getMACArrive()))
-                        minJitter() = simTime() - fr->getMACArrive();
-                    EV_DEBUG << "record macDelay AC" << currentAC << " value " << simTime() - fr->getMACArrive() << endl;
+                    edca->macDelay()->record(simTime() - fr->getMACArrive());
+                    if (edca->maxJitter() == SIMTIME_ZERO || edca->maxJitter() < (simTime() - fr->getMACArrive()))
+                        edca->maxJitter() = simTime() - fr->getMACArrive();
+                    if (edca->minJitter() == SIMTIME_ZERO || edca->minJitter() > (simTime() - fr->getMACArrive()))
+                        edca->minJitter() = simTime() - fr->getMACArrive();
+                    EV_DEBUG << "record macDelay AC" << edca->getCurrentAc() << " value " << simTime() - fr->getMACArrive() << endl;
                     numSentTXOP++;
                     cancelTimeoutPeriod();
                     finishCurrentTransmission();
@@ -1035,10 +1036,10 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Receive-ACK,
                                   isLowerMessage(msg) && isForUs(frame) && frameType == ST_ACK,
                                   IDLE,
-                                  currentAC=oldcurrentAC;
+                                  currentAC=edca->getOldcurrentAc();
                                   if (retryCounter[currentAC] == 0) numSentWithoutRetry[currentAC]++;
                                   numSent[currentAC]++;
-                                  fr=getCurrentTransmission();
+                                  fr=edca->getCurrentTransmission();
                                   numBites += fr->getBitLength();
                                   bits[currentAC] += fr->getBitLength();
 
@@ -1056,28 +1057,28 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Receive - ACK,
                     isLowerMessage(msg) && isForUs(frame) && frameType == ST_ACK,
                     DEFER,
-                    currentAC = oldcurrentAC;
-                    if (retryCounter() == 0)
-                        numSentWithoutRetry()++;
-                    numSent()++;
-                    fr = getCurrentTransmission();
+                    edca->setCurrentAc(edca->getOldCurrentAc());
+                    if (edca->retryCounter() == 0)
+                        edca->numSentWithoutRetry()++;
+                    edca->numSent()++;
+                    fr = edca->getCurrentTransmission();
                     numBits += fr->getBitLength();
-                    bits() += fr->getBitLength();
+                    edca->bits() += fr->getBitLength();
 
-                    macDelay()->record(simTime() - fr->getMACArrive());
-                    if (maxJitter() == SIMTIME_ZERO || maxJitter() < (simTime() - fr->getMACArrive()))
-                        maxJitter() = simTime() - fr->getMACArrive();
-                    if (minJitter() == SIMTIME_ZERO || minJitter() > (simTime() - fr->getMACArrive()))
-                        minJitter() = simTime() - fr->getMACArrive();
-                    EV_DEBUG << "record macDelay AC" << currentAC << " value " << simTime() - fr->getMACArrive() << endl;
+                    edca->macDelay()->record(simTime() - fr->getMACArrive());
+                    if (edca->maxJitter() == SIMTIME_ZERO || edca->maxJitter() < (simTime() - fr->getMACArrive()))
+                        edca->maxJitter() = simTime() - fr->getMACArrive();
+                    if (edca->minJitter() == SIMTIME_ZERO || edca->minJitter() > (simTime() - fr->getMACArrive()))
+                        edca->minJitter() = simTime() - fr->getMACArrive();
+                    EV_DEBUG << "record macDelay AC" << edca->getCurrentAc() << " value " << simTime() - fr->getMACArrive() << endl;
                     cancelTimeoutPeriod();
                     finishCurrentTransmission();
                     resetCurrentBackOff();
                     );
             FSMA_Event_Transition(Transmit - Data - Failed,
-                    msg == ackTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    msg == ackTimeout && edca->retryCounter(edca->getOldCurrentAc()) == transmissionLimit - 1,
                     IDLE,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     giveUpCurrentTransmission();
                     txop = false;
                     if (endTXOP->isScheduled())
@@ -1086,16 +1087,16 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Receive - ACK - Timeout,
                     msg == ackTimeout,
                     DEFER,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     retryCurrentTransmission();
                     txop = false;
                     if (endTXOP->isScheduled())
                         cancelEvent(endTXOP);
                     );
             FSMA_Event_Transition(Interrupted - ACK - Failure,
-                    isLowerMessage(msg) && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    isLowerMessage(msg) && edca->retryCounter(edca->getOldCurrentAc()) == transmissionLimit - 1,
                     RECEIVE,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     cancelTimeoutPeriod();
                     giveUpCurrentTransmission();
                     txop = false;
@@ -1105,7 +1106,7 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Retry - Interrupted - ACK,
                     isLowerMessage(msg),
                     RECEIVE,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     cancelTimeoutPeriod();
                     retryCurrentTransmission();
                     txop = false;
@@ -1115,12 +1116,12 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
         }
         // wait until multicast is sent
         FSMA_State(WAITMULTICAST) {
-            FSMA_Enter(scheduleMulticastTimeoutPeriod(getCurrentTransmission()));
+            FSMA_Enter(scheduleMulticastTimeoutPeriod(edca->getCurrentTransmission()));
             /*
                         FSMA_Event_Transition(Transmit-Multicast,
                                               msg == endTimeout,
                                               IDLE,
-                            currentAC=oldcurrentAC;
+                            currentAC=edca->getOldcurrentAc();
                             finishCurrentTransmission();
                             numSentMulticast++;
                         );
@@ -1129,10 +1130,10 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Transmit - Multicast,
                     msg == ackTimeout,
                     DEFER,
-                    currentAC = oldcurrentAC;
-                    fr = getCurrentTransmission();
+                    edca->setCurrentAc(edca->getOldCurrentAc());
+                    fr = edca->getCurrentTransmission();
                     numBits += fr->getBitLength();
-                    bits() += fr->getBitLength();
+                    edca->bits() += fr->getBitLength();
                     finishCurrentTransmission();
                     numSentMulticast++;
                     resetCurrentBackOff();
@@ -1143,17 +1144,17 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Enter(scheduleCTSTimeoutPeriod());
 #ifndef DISABLEERRORACK
             FSMA_Event_Transition(Reception - CTS - Failed,
-                    isLowerMessage(msg) && receptionError && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    isLowerMessage(msg) && receptionError && edca->retryCounter(edca->getOldCurrentAc()) == transmissionLimit - 1,
                     IDLE,
                     cancelTimeoutPeriod();
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     giveUpCurrentTransmission();
                     );
             FSMA_Event_Transition(Reception - CTS - error,
                     isLowerMessage(msg) && receptionError,
                     DEFER,
                     cancelTimeoutPeriod();
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     retryCurrentTransmission();
                     );
 #endif // ifndef DISABLEERRORACK
@@ -1163,15 +1164,15 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
                     cancelTimeoutPeriod();
                     );
             FSMA_Event_Transition(Transmit - RTS - Failed,
-                    msg == ackTimeout && retryCounter(oldcurrentAC) == transmissionLimit - 1,
+                    msg == ackTimeout && edca->retryCounter(edca->getOldCurrentAc()) == transmissionLimit - 1,
                     IDLE,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     giveUpCurrentTransmission();
                     );
             FSMA_Event_Transition(Receive - CTS - Timeout,
                     msg == ackTimeout,
                     DEFER,
-                    currentAC = oldcurrentAC;
+                    edca->setCurrentAc(edca->getOldCurrentAc());
                     retryCurrentTransmission();
                     );
         }
@@ -1180,8 +1181,8 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Transmit - Data - TXOP,
                     msg == endSIFS && getFrameReceivedBeforeSIFS()->getType() == ST_ACK,
                     WAITACK,
-                    sendDataFrame(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendDataFrame(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     );
             FSMA_Event_Transition(Transmit - CTS,
                     msg == endSIFS && getFrameReceivedBeforeSIFS()->getType() == ST_RTS,
@@ -1192,8 +1193,8 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
             FSMA_Event_Transition(Transmit - DATA,
                     msg == endSIFS && getFrameReceivedBeforeSIFS()->getType() == ST_CTS,
                     WAITACK,
-                    sendDataFrameOnEndSIFS(getCurrentTransmission());
-                    oldcurrentAC = currentAC;
+                    sendDataFrameOnEndSIFS(edca->getCurrentTransmission());
+                    edca->setOldCurrentAc(edca->getCurrentAc());
                     );
             FSMA_Event_Transition(Transmit - ACK,
                     msg == endSIFS && isDataOrMgmtFrame(getFrameReceivedBeforeSIFS()),
@@ -1252,13 +1253,13 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
     logState();
     stateVector.record(fsm.getState());
     if (simTime() - last > 0.1) {
-        for (int i = 0; i < numCategories(); i++) {
-            throughput(i)->record(bits(i) / (simTime() - last));
-            bits(i) = 0;
-            if (maxJitter(i) > SIMTIME_ZERO && minJitter(i) > SIMTIME_ZERO) {
-                jitter(i)->record(maxJitter(i) - minJitter(i));
-                maxJitter(i) = SIMTIME_ZERO;
-                minJitter(i) = SIMTIME_ZERO;
+        for (int i = 0; i < edca->numCategories(); i++) {
+            edca->throughput(i)->record(edca->bits(i) / (simTime() - last));
+            edca->bits(i) = 0;
+            if (edca->maxJitter(i) > SIMTIME_ZERO && edca->minJitter(i) > SIMTIME_ZERO) {
+                edca->jitter(i)->record(edca->maxJitter(i) - edca->minJitter(i));
+                edca->maxJitter(i) = SIMTIME_ZERO;
+                edca->minJitter(i) = SIMTIME_ZERO;
             }
         }
         last = simTime();
@@ -1268,8 +1269,8 @@ void Ieee80211Mac::handleWithFSM(cMessage *msg)
 
 void Ieee80211Mac::finishReception()
 {
-    if (getCurrentTransmission()) {
-        backoff() = true;
+    if (edca->getCurrentTransmission()) {
+        edca->backoff() = true;
     }
     else {
         resetStateVariables();
@@ -1297,20 +1298,20 @@ simtime_t Ieee80211Mac::getPIFS()
 
 simtime_t Ieee80211Mac::getDIFS(int category)
 {
-    if (category < 0 || category > (numCategories() - 1)) {
-        int index = numCategories() - 1;
+    if (category < 0 || category > (edca->numCategories() - 1)) {
+        int index = edca->numCategories() - 1;
         if (index < 0)
             index = 0;
-        return getSIFS() + ((double)AIFSN(index) * getSlotTime());
+        return getSIFS() + ((double)edca->AIFSN(index) * getSlotTime());
     }
     else {
-        return getSIFS() + ((double)AIFSN(category)) * getSlotTime();
+        return getSIFS() + ((double)edca->AIFSN(category)) * getSlotTime();
     }
 }
 
 simtime_t Ieee80211Mac::getAIFS(int AccessCategory)
 {
-    return AIFSN(AccessCategory) * getSlotTime() + getSIFS();
+    return edca->AIFSN(AccessCategory) * getSlotTime() + getSIFS();
 }
 
 simtime_t Ieee80211Mac::getEIFS()
@@ -1331,15 +1332,15 @@ simtime_t Ieee80211Mac::computeBackoffPeriod(Ieee80211Frame *msg, int r)
     else {
         ASSERT(0 <= r && r < transmissionLimit);
 
-        cw = (cwMin() + 1) * (1 << r) - 1;
+        cw = (edca->cwMin() + 1) * (1 << r) - 1;
 
-        if (cw > cwMax())
-            cw = cwMax();
+        if (cw > edca->cwMax())
+            cw = edca->cwMax();
     }
 
     int c = intrand(cw + 1);
 
-    EV_DEBUG << "generated backoff slot number: " << c << " , cw: " << cw << " ,cwMin:cwMax = " << cwMin() << ":" << cwMax() << endl;
+    EV_DEBUG << "generated backoff slot number: " << c << " , cw: " << cw << " ,cwMin:cwMax = " << edca->cwMin() << ":" << edca->cwMax() << endl;
 
     return ((double)c) * getSlotTime();
 }
@@ -1375,23 +1376,23 @@ void Ieee80211Mac::cancelDIFSPeriod()
 void Ieee80211Mac::scheduleAIFSPeriod()
 {
     bool schedule = false;
-    for (int i = 0; i < numCategories(); i++) {
-        if (!endAIFS(i)->isScheduled() && !transmissionQueue(i)->empty()) {
+    for (int i = 0; i < edca->numCategories(); i++) {
+        if (!edca->endAIFS(i)->isScheduled() && !edca->transmissionQueue(i)->empty()) {
             if (lastReceiveFailed) {
                 EV_DEBUG << "reception of last frame failed, scheduling EIFS-DIFS+AIFS period (" << i << ")\n";
-                scheduleAt(simTime() + getEIFS() - getDIFS() + getAIFS(i), endAIFS(i));
+                scheduleAt(simTime() + getEIFS() - getDIFS() + getAIFS(i), edca->endAIFS(i));
             }
             else {
                 EV_DEBUG << "scheduling AIFS period (" << i << ")\n";
-                scheduleAt(simTime() + getAIFS(i), endAIFS(i));
+                scheduleAt(simTime() + getAIFS(i), edca->endAIFS(i));
             }
         }
-        if (endAIFS(i)->isScheduled())
+        if (edca->endAIFS(i)->isScheduled())
             schedule = true;
     }
     if (!schedule && !endDIFS->isScheduled()) {
         // schedule default DIFS
-        currentAC = numCategories() - 1;
+        edca->setCurrentAc(edca->numCategories() - 1);
         scheduleDIFSPeriod();
     }
 }
@@ -1400,15 +1401,15 @@ void Ieee80211Mac::rescheduleAIFSPeriod(int AccessCategory)
 {
     ASSERT(1);
     EV_DEBUG << "rescheduling AIFS[" << AccessCategory << "]\n";
-    cancelEvent(endAIFS(AccessCategory));
-    scheduleAt(simTime() + getAIFS(AccessCategory), endAIFS(AccessCategory));
+    cancelEvent(edca->endAIFS(AccessCategory));
+    scheduleAt(simTime() + getAIFS(AccessCategory), edca->endAIFS(AccessCategory));
 }
 
 void Ieee80211Mac::cancelAIFSPeriod()
 {
     EV_DEBUG << "canceling AIFS period\n";
-    for (int i = 0; i < numCategories(); i++)
-        cancelEvent(endAIFS(i));
+    for (int i = 0; i < edca->numCategories(); i++)
+        cancelEvent(edca->endAIFS(i));
     cancelEvent(endDIFS);
 }
 
@@ -1492,19 +1493,19 @@ void Ieee80211Mac::scheduleReservePeriod(Ieee80211Frame *frame)
 
 void Ieee80211Mac::invalidateBackoffPeriod()
 {
-    backoffPeriod() = -1;
+    edca->backoffPeriod() = -1;
 }
 
 bool Ieee80211Mac::isInvalidBackoffPeriod()
 {
-    return backoffPeriod() == -1;
+    return edca->backoffPeriod() == -1;
 }
 
 void Ieee80211Mac::generateBackoffPeriod()
 {
-    backoffPeriod() = computeBackoffPeriod(getCurrentTransmission(), retryCounter());
-    ASSERT(backoffPeriod() >= SIMTIME_ZERO);
-    EV_DEBUG << "backoff period set to " << backoffPeriod() << endl;
+    edca->backoffPeriod() = computeBackoffPeriod(edca->getCurrentTransmission(), edca->retryCounter());
+    ASSERT(edca->backoffPeriod() >= SIMTIME_ZERO);
+    EV_DEBUG << "backoff period set to " << edca->backoffPeriod() << endl;
 }
 
 void Ieee80211Mac::decreaseBackoffPeriod()
@@ -1512,15 +1513,15 @@ void Ieee80211Mac::decreaseBackoffPeriod()
     // see spec 9.9.1.5
     // decrase for every EDCAF
     // cancel event endBackoff after decrease or we don't know which endBackoff is scheduled
-    for (int i = 0; i < numCategories(); i++) {
-        if (backoff(i) && endBackoff(i)->isScheduled()) {
-            EV_DEBUG << "old backoff[" << i << "] is " << backoffPeriod(i) << ", sim time is " << simTime()
-                     << ", endbackoff sending period is " << endBackoff(i)->getSendingTime() << endl;
-            simtime_t elapsedBackoffTime = simTime() - endBackoff(i)->getSendingTime();
-            backoffPeriod(i) -= ((int)(elapsedBackoffTime / getSlotTime())) * getSlotTime();
-            EV_DEBUG << "actual backoff[" << i << "] is " << backoffPeriod(i) << ", elapsed is " << elapsedBackoffTime << endl;
-            ASSERT(backoffPeriod(i) >= SIMTIME_ZERO);
-            EV_DEBUG << "backoff[" << i << "] period decreased to " << backoffPeriod(i) << endl;
+    for (int i = 0; i < edca->numCategories(); i++) {
+        if (edca->backoff(i) && edca->endBackoff(i)->isScheduled()) {
+            EV_DEBUG << "old backoff[" << i << "] is " << edca->backoffPeriod(i) << ", sim time is " << simTime()
+                     << ", endbackoff sending period is " << edca->endBackoff(i)->getSendingTime() << endl;
+            simtime_t elapsedBackoffTime = simTime() - edca->endBackoff(i)->getSendingTime();
+            edca->backoffPeriod(i) -= ((int)(elapsedBackoffTime / getSlotTime())) * getSlotTime();
+            EV_DEBUG << "actual backoff[" << i << "] is " << edca->backoffPeriod(i) << ", elapsed is " << elapsedBackoffTime << endl;
+            ASSERT(edca->backoffPeriod(i) >= SIMTIME_ZERO);
+            EV_DEBUG << "backoff[" << i << "] period decreased to " << edca->backoffPeriod(i) << endl;
         }
     }
 }
@@ -1528,14 +1529,14 @@ void Ieee80211Mac::decreaseBackoffPeriod()
 void Ieee80211Mac::scheduleBackoffPeriod()
 {
     EV_DEBUG << "scheduling backoff period\n";
-    scheduleAt(simTime() + backoffPeriod(), endBackoff());
+    scheduleAt(simTime() + edca->backoffPeriod(), edca->endBackoff());
 }
 
 void Ieee80211Mac::cancelBackoffPeriod()
 {
     EV_DEBUG << "cancelling Backoff period - only if some is scheduled\n";
-    for (int i = 0; i < numCategories(); i++)
-        cancelEvent(endBackoff(i));
+    for (int i = 0; i < edca->numCategories(); i++)
+        cancelEvent(edca->endBackoff(i));
 }
 
 /****************************************************************
@@ -1569,17 +1570,17 @@ void Ieee80211Mac::sendDataFrame(Ieee80211DataOrMgmtFrame *frameToSend)
 {
     simtime_t t = 0, time = 0;
     int count = 0;
-    auto frame = transmissionQueue()->begin();
+    auto frame = edca->transmissionQueue()->begin();
     ASSERT(*frame == frameToSend);
-    if (!txop && TXOP() > 0 && transmissionQueue()->size() >= 2) {
+    if (!txop && edca->TXOP() > 0 && edca->transmissionQueue()->size() >= 2) {
         //we start packet burst within TXOP time period
         txop = true;
 
-        for (frame = transmissionQueue()->begin(); frame != transmissionQueue()->end(); ++frame) {
+        for (frame = edca->transmissionQueue()->begin(); frame != edca->transmissionQueue()->end(); ++frame) {
             count++;
             t = computeFrameDuration(*frame) + 2 * getSIFS() + controlFrameTxTime(LENGTH_ACK);
             EV_DEBUG << "t is " << t << endl;
-            if (TXOP() > time + t) {
+            if (edca->TXOP() > time + t) {
                 time += t;
                 EV_DEBUG << "adding t\n";
             }
@@ -1589,7 +1590,7 @@ void Ieee80211Mac::sendDataFrame(Ieee80211DataOrMgmtFrame *frameToSend)
         }
         //to be sure we get endTXOP earlier then receive ACK and we have to minus SIFS time from first packet
         time -= getSIFS() / 2 + getSIFS();
-        EV_DEBUG << "scheduling TXOP for AC" << currentAC << ", duration is " << time << ", count is " << count << endl;
+        EV_DEBUG << "scheduling TXOP for AC" << edca->getCurrentAc() << ", duration is " << time << ", count is " << count << endl;
         scheduleAt(simTime() + time, endTXOP);
     }
     EV_INFO << "sending Data frame\n";
@@ -1645,14 +1646,14 @@ Ieee80211DataOrMgmtFrame *Ieee80211Mac::buildDataFrame(Ieee80211DataOrMgmtFrame 
     if (isMulticast(frameToSend))
         frame->setDuration(0);
     else if (!frameToSend->getMoreFragments()) {
-        if (txop && transmissionQueue()->size() > 1) {
+        if (txop && edca->transmissionQueue()->size() > 1) {
             // ++ operation is safe because txop is true
-            auto nextframeToSend = transmissionQueue()->begin();
+            auto nextframeToSend = edca->transmissionQueue()->begin();
             nextframeToSend++;
-            ASSERT(transmissionQueue()->end() != nextframeToSend);
+            ASSERT(edca->transmissionQueue()->end() != nextframeToSend);
             double bitRate = dataFrameMode->getDataMode()->getNetBitrate().get();
             int size = (*nextframeToSend)->getBitLength();
-            TransmissionRequest *trRq = dynamic_cast<TransmissionRequest *>(transmissionQueue()->front()->getControlInfo());
+            TransmissionRequest *trRq = dynamic_cast<TransmissionRequest *>(edca->transmissionQueue()->front()->getControlInfo());
             if (trRq) {
                 bitRate = trRq->getBitrate().get();
                 if (bitRate == 0)
@@ -1768,29 +1769,29 @@ void Ieee80211Mac::finishCurrentTransmission()
 
 void Ieee80211Mac::giveUpCurrentTransmission()
 {
-    Ieee80211DataOrMgmtFrame *temp = (Ieee80211DataOrMgmtFrame *)transmissionQueue()->front();
+    Ieee80211DataOrMgmtFrame *temp = (Ieee80211DataOrMgmtFrame *)edca->transmissionQueue()->front();
     emit(NF_LINK_BREAK, temp);
     popTransmissionQueue();
     resetStateVariables();
-    numGivenUp()++;
+    edca->numGivenUp()++;
 }
 
 void Ieee80211Mac::retryCurrentTransmission()
 {
-    ASSERT(retryCounter() < transmissionLimit - 1);
-    getCurrentTransmission()->setRetry(true);
-    retryCounter()++;
+    ASSERT(edca->retryCounter() < transmissionLimit - 1);
+    edca->getCurrentTransmission()->setRetry(true);
+    edca->retryCounter()++;
     if (autoRate)
-        autoRate->reportDataFailed(modeSet, dataFrameMode, retryCounter(), needNormalFallback());
-    numRetry()++;
-    backoff() = true;
+        autoRate->reportDataFailed(modeSet, dataFrameMode, edca->retryCounter(), needNormalFallback());
+    edca->numRetry()++;
+    edca->backoff() = true;
     generateBackoffPeriod();
 }
 
-Ieee80211DataOrMgmtFrame *Ieee80211Mac::getCurrentTransmission()
-{
-    return transmissionQueue()->empty() ? nullptr : (Ieee80211DataOrMgmtFrame *)transmissionQueue()->front();
-}
+//Ieee80211DataOrMgmtFrame *Ieee80211Mac::getCurrentTransmission()
+//{
+//    return edca->transmissionQueue()->empty() ? nullptr : (Ieee80211DataOrMgmtFrame *)edca->transmissionQueue()->front();
+//}
 
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()
 {
@@ -1810,16 +1811,16 @@ void Ieee80211Mac::setMode(Mode mode)
 
 void Ieee80211Mac::resetStateVariables()
 {
-    backoffPeriod() = SIMTIME_ZERO;
-    retryCounter() = 0;
+    edca->backoffPeriod() = SIMTIME_ZERO;
+    edca->retryCounter() = 0;
     if (autoRate)
         autoRate->reportDataOk(modeSet, dataFrameMode);
-    if (!transmissionQueue()->empty()) {
-        backoff() = true;
-        getCurrentTransmission()->setRetry(false);
+    if (!edca->transmissionQueue()->empty()) {
+        edca->backoff() = true;
+        edca->getCurrentTransmission()->setRetry(false);
     }
     else {
-        backoff() = false;
+        edca->backoff() = false;
     }
 }
 
@@ -1864,8 +1865,8 @@ bool Ieee80211Mac::isDataOrMgmtFrame(Ieee80211Frame *frame)
 
 bool Ieee80211Mac::isMsgAIFS(cMessage *msg)
 {
-    for (int i = 0; i < numCategories(); i++)
-        if (msg == endAIFS(i))
+    for (int i = 0; i < edca->numCategories(); i++)
+        if (msg == edca->endAIFS(i))
             return true;
 
     return false;
@@ -1879,16 +1880,16 @@ Ieee80211Frame *Ieee80211Mac::getFrameReceivedBeforeSIFS()
 void Ieee80211Mac::popTransmissionQueue()
 {
     EV_DEBUG << "dropping frame from transmission queue\n";
-    Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(transmissionQueue()->front());
-    ASSERT(!transmissionQueue()->empty());
-    transmissionQueue()->pop_front();
+    Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(edca->transmissionQueue()->front());
+    ASSERT(!edca->transmissionQueue()->empty());
+    edca->transmissionQueue()->pop_front();
     if (queueModule) {
-        if (numCategories() == 1) {
+        if (edca->numCategories() == 1) {
             // the module are continuously asking for packets
             EV_DEBUG << "requesting another frame from queue module\n";
             queueModule->requestPacket();
         }
-        else if (numCategories() > 1 && (int)transmissionQueueSize() == maxQueueSize - 1) {
+        else if (edca->numCategories() > 1 && (int)edca->transmissionQueueSize() == maxQueueSize - 1) {
             // Now exist a empty frame space
             // the module are continuously asking for packets
             EV_DEBUG << "requesting another frame from queue module\n";
@@ -1929,7 +1930,8 @@ double Ieee80211Mac::computeFrameDuration(int bits, double bitrate)
 
 void Ieee80211Mac::logState()
 {
-    int numCategs = numCategories();
+    Ieee80211Edca::EdcaVector edcCAF = edca->getEdcCaf();
+    int numCategs = edca->numCategories();
     EV_TRACE << "# state information: mode = " << modeName(mode) << ", state = " << fsm.getStateName();
     EV_TRACE << ", backoff 0.." << numCategs << " =";
     for (int i = 0; i < numCategs; i++)
@@ -1946,16 +1948,16 @@ void Ieee80211Mac::logState()
              << ", nav = " << nav << ", txop is " << txop << "\n";
     EV_TRACE << "#queue size 0.." << numCategs << " =";
     for (int i = 0; i < numCategs; i++)
-        EV_TRACE << " " << transmissionQueue(i)->size();
+        EV_TRACE << " " << edca->transmissionQueue(i)->size();
     EV_TRACE << ", medium is " << (isMediumFree() ? "free" : "busy") << ", scheduled AIFS are";
     for (int i = 0; i < numCategs; i++)
         EV_TRACE << " " << i << "(" << (edcCAF[i].endAIFS->isScheduled() ? "scheduled" : "") << ")";
     EV_TRACE << ", scheduled backoff are";
     for (int i = 0; i < numCategs; i++)
         EV_TRACE << " " << i << "(" << (edcCAF[i].endBackoff->isScheduled() ? "scheduled" : "") << ")";
-    EV_TRACE << "\n# currentAC: " << currentAC << ", oldcurrentAC: " << oldcurrentAC;
-    if (getCurrentTransmission() != nullptr)
-        EV_TRACE << "\n# current transmission: " << getCurrentTransmission()->getId();
+    EV_TRACE << "\n# currentAC: " << edca->getCurrentAc() << ", edca->getOldcurrentAc(): " << edca->getOldCurrentAc();
+    if (edca->getCurrentTransmission() != nullptr)
+        EV_TRACE << "\n# current transmission: " << edca->getCurrentTransmission()->getId();
     else
         EV_TRACE << "\n# current transmission: none";
     EV_TRACE << endl;
@@ -1974,22 +1976,22 @@ const char *Ieee80211Mac::modeName(int mode)
 #undef CASE
 }
 
-bool Ieee80211Mac::transmissionQueueEmpty()
-{
-    for (int i = 0; i < numCategories(); i++)
-        if (!transmissionQueue(i)->empty())
-            return false;
-
-    return true;
-}
-
-unsigned int Ieee80211Mac::transmissionQueueSize()
-{
-    unsigned int totalSize = 0;
-    for (int i = 0; i < numCategories(); i++)
-        totalSize += transmissionQueue(i)->size();
-    return totalSize;
-}
+//bool Ieee80211Mac::transmissionQueueEmpty()
+//{
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        if (!transmissionQueue(i)->empty())
+//            return false;
+//
+//    return true;
+//}
+//
+//unsigned int Ieee80211Mac::transmissionQueueSize()
+//{
+//    unsigned int totalSize = 0;
+//    for (int i = 0; i < edca->numCategories(); i++)
+//        totalSize += transmissionQueue(i)->size();
+//    return totalSize;
+//}
 
 void Ieee80211Mac::flushQueue()
 {
@@ -2002,10 +2004,10 @@ void Ieee80211Mac::flushQueue()
         queueModule->clear();    // clear request count
     }
 
-    for (int i = 0; i < numCategories(); i++) {
-        while (!transmissionQueue(i)->empty()) {
-            cMessage *msg = transmissionQueue(i)->front();
-            transmissionQueue(i)->pop_front();
+    for (int i = 0; i < edca->numCategories(); i++) {
+        while (!edca->transmissionQueue(i)->empty()) {
+            cMessage *msg = edca->transmissionQueue(i)->front();
+            edca->transmissionQueue(i)->pop_front();
             //TODO emit(dropPkIfaceDownSignal, msg); -- 'pkDropped' signals are missing in this module!
             delete msg;
         }
@@ -2018,10 +2020,10 @@ void Ieee80211Mac::clearQueue()
         queueModule->clear();    // clear request count
     }
 
-    for (int i = 0; i < numCategories(); i++) {
-        while (!transmissionQueue(i)->empty()) {
-            cMessage *msg = transmissionQueue(i)->front();
-            transmissionQueue(i)->pop_front();
+    for (int i = 0; i < edca->numCategories(); i++) {
+        while (!edca->transmissionQueue(i)->empty()) {
+            cMessage *msg = edca->transmissionQueue(i)->front();
+            edca->transmissionQueue(i)->pop_front();
             delete msg;
         }
     }
@@ -2029,7 +2031,7 @@ void Ieee80211Mac::clearQueue()
 
 bool Ieee80211Mac::needRecoveryFallback(void)
 {
-    if (retryCounter() == 1) {
+    if (edca->retryCounter() == 1) {
         return true;
     }
     else {
@@ -2039,7 +2041,7 @@ bool Ieee80211Mac::needRecoveryFallback(void)
 
 bool Ieee80211Mac::needNormalFallback(void)
 {
-    int retryMod = (retryCounter() - 1) % 2;
+    int retryMod = (edca->retryCounter() - 1) % 2;
     if (retryMod == 1) {
         return true;
     }
@@ -2056,210 +2058,6 @@ double Ieee80211Mac::getBitrate()
 void Ieee80211Mac::setBitrate(double rate)
 {
     dataFrameMode = modeSet->getMode(bps(rate));
-}
-
-// method for access to the EDCA data
-
-// methods for access to specific AC data
-bool& Ieee80211Mac::backoff(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].backoff;
-}
-
-simtime_t& Ieee80211Mac::TXOP(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].TXOP;
-}
-
-simtime_t& Ieee80211Mac::backoffPeriod(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].backoffPeriod;
-}
-
-int& Ieee80211Mac::retryCounter(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].retryCounter;
-}
-
-int& Ieee80211Mac::AIFSN(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].AIFSN;
-}
-
-int& Ieee80211Mac::cwMax(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].cwMax;
-}
-
-int& Ieee80211Mac::cwMin(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].cwMin;
-}
-
-cMessage *Ieee80211Mac::endAIFS(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].endAIFS;
-}
-
-cMessage *Ieee80211Mac::endBackoff(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].endBackoff;
-}
-
-const bool Ieee80211Mac::isBackoffMsg(cMessage *msg)
-{
-    for (auto & elem : edcCAF) {
-        if (msg == elem.endBackoff)
-            return true;
-    }
-    return false;
-}
-
-// Statistics
-long& Ieee80211Mac::numRetry(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].numRetry;
-}
-
-long& Ieee80211Mac::numSentWithoutRetry(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)numCategories())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].numSentWithoutRetry;
-}
-
-long& Ieee80211Mac::numGivenUp(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].numGivenUp;
-}
-
-long& Ieee80211Mac::numSent(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].numSent;
-}
-
-long& Ieee80211Mac::numDropped(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].numDropped;
-}
-
-long& Ieee80211Mac::bits(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].bits;
-}
-
-simtime_t& Ieee80211Mac::minJitter(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].minjitter;
-}
-
-simtime_t& Ieee80211Mac::maxJitter(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAF[i].maxjitter;
-}
-
-// out vectors
-
-cOutVector *Ieee80211Mac::jitter(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAFOutVector[i].jitter;
-}
-
-cOutVector *Ieee80211Mac::macDelay(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAFOutVector[i].macDelay;
-}
-
-cOutVector *Ieee80211Mac::throughput(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return edcCAFOutVector[i].throughput;
-}
-
-Ieee80211Mac::Ieee80211DataOrMgmtFrameList *Ieee80211Mac::transmissionQueue(int i)
-{
-    if (i == -1)
-        i = currentAC;
-    if (i >= (int)edcCAF.size())
-        throw cRuntimeError("AC doesn't exist");
-    return &(edcCAF[i].transmissionQueue);
 }
 
 const IIeee80211Mode *Ieee80211Mac::getControlAnswerMode(const IIeee80211Mode *reqMode)
@@ -2428,6 +2226,7 @@ void Ieee80211Mac::promiscousFrame(cMessage *msg)
 
 bool Ieee80211Mac::isBackoffPending()
 {
+    const Ieee80211Edca::EdcaVector edcCAF = edca->getEdcCaf();
     for (auto & elem : edcCAF) {
         if (elem.backoff)
             return true;
@@ -2468,12 +2267,12 @@ void Ieee80211Mac::handleNodeCrash()
     cancelEvent(endReserve);
     cancelEvent(mediumStateChange);
     cancelEvent(endTXOP);
-    for (unsigned int i = 0; i < edcCAF.size(); i++) {
-        cancelEvent(endAIFS(i));
-        cancelEvent(endBackoff(i));
-        while (!transmissionQueue(i)->empty()) {
-            Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(transmissionQueue(i)->front());
-            transmissionQueue(i)->pop_front();
+    for (unsigned int i = 0; i < edca->getEdcCaf().size(); i++) {
+        cancelEvent(edca->endAIFS(i));
+        cancelEvent(edca->endBackoff(i));
+        while (!edca->transmissionQueue(i)->empty()) {
+            Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(edca->transmissionQueue(i)->front());
+            edca->transmissionQueue(i)->pop_front();
             delete temp;
         }
     }
