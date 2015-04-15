@@ -103,7 +103,6 @@ module Ieee80211Mac extends MACProtocolBase like IMACProtocol
         edca.cwMaxData = cwMaxData;
         int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
-        double phyHeaderLength @unit("s") = default(-1s); // when <0, the MAC will compute it in function of the modulation type
         // duplicate detection
         bool duplicateDetectionFilter = default(true); // whether to detect and filter out duplicate frames
         bool purgeOldTuples = default(true); // delete old tuples in the duplicate list

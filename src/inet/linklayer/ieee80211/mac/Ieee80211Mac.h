@@ -151,7 +151,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase
     /** Slot time 9us(fast slot time 802.11g only) 20us(802.11b / 802.11g backward compatible)*/
     simtime_t ST;
 
-    double PHY_HEADER_LENGTH = NaN;
     /** Minimum contention window. */
     int cwMinData = 0;
     //int cwMin[4];

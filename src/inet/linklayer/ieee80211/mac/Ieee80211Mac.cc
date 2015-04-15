@@ -89,8 +89,6 @@ void Ieee80211Mac::initialize(int stage)
         // initialize parameters
         modeSet = Ieee80211ModeSet::getModeSet(*par("opMode").stringValue());
 
-        PHY_HEADER_LENGTH = par("phyHeaderLength");    //26us
-
         prioritizeMulticast = par("prioritizeMulticast");
 
         EV_DEBUG << "Operating mode: 802.11" << modeSet->getName();
@@ -1683,15 +1681,10 @@ double Ieee80211Mac::computeFrameDuration(Ieee80211Frame *msg)
         return computeFrameDuration(msg->getBitLength(), dataFrameMode->getDataMode()->getNetBitrate().get());
 }
 
-double Ieee80211Mac::computeFrameDuration(int bits, double bitrate)
+double Ieee80211Mac::computeFrameDuration(int bits, double bitrate) // TODO: double -> simtime_t
 {
-    double duration;
     const IIeee80211Mode *modType = modeSet->getMode(bps(bitrate));
-    if (PHY_HEADER_LENGTH < 0)
-        duration = SIMTIME_DBL(modType->getDuration(bits));
-    else
-        duration = SIMTIME_DBL(modType->getDataMode()->getDuration(bits)) + PHY_HEADER_LENGTH;
-
+    double duration = SIMTIME_DBL(modType->getDataMode()->getDuration(bits)) + modType->getHeaderMode()->getDuration().dbl();
     EV_DEBUG << " duration=" << duration * 1e6 << "us(" << bits << "bits " << bitrate / 1e6 << "Mbps)" << endl;
     return duration;
 }
