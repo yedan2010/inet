@@ -190,73 +190,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase
   protected:
     cFSM fsm;
     Ieee80211Edca *edca = nullptr;
-//    struct Edca
-//    {
-//        simtime_t TXOP;
-//        bool backoff;
-//        simtime_t backoffPeriod;
-//        int retryCounter;
-//        int AIFSN;    // Arbitration interframe space number. The duration edcCAF[AC].AIFSis a duration derived from the value AIFSN[AC] by the relation
-//        int cwMax;
-//        int cwMin;
-//        // queue
-//        Ieee80211DataOrMgmtFrameList transmissionQueue;
-//        // per class timers
-//        cMessage *endAIFS;
-//        cMessage *endBackoff;
-//        /** @name Statistics per Access Class*/
-//        //@{
-//        long numRetry;
-//        long numSentWithoutRetry;
-//        long numGivenUp;
-//        long numSent;
-//        long numDropped;
-//        long bits;
-//        simtime_t minjitter;
-//        simtime_t maxjitter;
-//    };
-
-//    struct EdcaOutVector
-//    {
-//        cOutVector *jitter;
-//        cOutVector *macDelay;
-//        cOutVector *throughput;
-//    };
-//
-//    std::vector<Edca> edcCAF;
-//    std::vector<EdcaOutVector> edcCAFOutVector;
-    //
-    // methods for access to the current AC data
-    //
-    // methods for access to specific AC data
-//    virtual bool& backoff(int i = -1);
-//    virtual simtime_t& TXOP(int i = -1);
-//    virtual simtime_t& backoffPeriod(int i = -1);
-//    virtual int& retryCounter(int i = -1);
-//    virtual int& AIFSN(int i = -1);
-//    virtual int& cwMax(int i = -1);
-//    virtual int& cwMin(int i = -1);
-//    virtual cMessage *endAIFS(int i = -1);
-//    virtual cMessage *endBackoff(int i = -1);
-//    virtual Ieee80211DataOrMgmtFrameList *transmissionQueue(int i = -1);
-//    virtual void setEndAIFS(int i, cMessage *msg) { edcCAF[i].endAIFS = msg; }
-//    virtual void setEndBackoff(int i, cMessage *msg) { edcCAF[i].endBackoff = msg; }
-
-//    // Statistics
-//    virtual long& numRetry(int i = -1);
-//    virtual long& numSentWithoutRetry(int i = -1);
-//    virtual long& numGivenUp(int i = -1);
-//    virtual long& numSent(int i = -1);
-//    virtual long& numDropped(int i = -1);
-//    virtual long& bits(int i = -1);
-//    virtual simtime_t& minJitter(int i = -1);
-//    virtual simtime_t& maxJitter(int i = -1);
-//// out vectors
-//    virtual cOutVector *jitter(int i = -1);
-//    virtual cOutVector *macDelay(int i = -1);
-//    virtual cOutVector *throughput(int i = -1);
-//    inline int numCategories() const { return edcCAF.size(); }
-//    virtual const bool isBackoffMsg(cMessage *msg);
 
     const char *modeName(int mode);
 
@@ -281,8 +214,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase
      * SLRC and SSRC, see 9.2.4 in the spec
      */
     //int retryCounter[4];
-
-//    IQoSClassifier *classifier = nullptr;
 
   public:
     /** 80211 MAC operation modes */
@@ -534,15 +465,8 @@ class INET_API Ieee80211Mac : public MACProtocolBase
      */
     //@{
     virtual void finishCurrentTransmission();
-//    virtual void giveUpCurrentTransmission();
-//    virtual void retryCurrentTransmission();
-//    virtual bool transmissionQueueEmpty();
-//    virtual unsigned int transmissionQueueSize();
     virtual void flushQueue();
     virtual void clearQueue();
-
-    /** @brief Mapping to access categories. */
-//    virtual int mappingAccessCategory(Ieee80211DataOrMgmtFrame *frame);     // FIXME rename it, change return type, change 'return 200'
 
     /** @brief Send down the change channel message to the physical layer if there is any. */
     virtual void sendDownPendingRadioConfigMsg();

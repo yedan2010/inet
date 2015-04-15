@@ -67,22 +67,6 @@ Ieee80211Mac::~Ieee80211Mac()
     cancelAndDelete(endReserve);
     cancelAndDelete(mediumStateChange);
     cancelAndDelete(endTXOP);
-//    for (unsigned int i = 0; i < edcCAF.size(); i++) {
-//        cancelAndDelete(endAIFS(i));
-//        cancelAndDelete(endBackoff(i));
-//        while (!transmissionQueue(i)->empty()) {
-//            Ieee80211Frame *temp = dynamic_cast<Ieee80211Frame *>(transmissionQueue(i)->front());
-//            transmissionQueue(i)->pop_front();
-//            delete temp;
-//        }
-//    }
-//    edcCAF.clear();
-//    for (auto & elem : edcCAFOutVector) {
-//        delete elem.jitter;
-//        delete elem.macDelay;
-//        delete elem.throughput;
-//    }
-//    edcCAFOutVector.clear();
     if (pendingRadioConfigMsg)
         delete pendingRadioConfigMsg;
 //    delete classifier;
@@ -102,20 +86,6 @@ void Ieee80211Mac::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         autoRate = dynamic_cast<Ieee80211MacAutoRate *>(getSubmodule("autoRate"));
         edca = new Ieee80211Edca(); // TODO: module
-        int numQueues = 1;
-//        if (par("EDCA")) {
-//            const char *classifierClass = par("classifier");
-//            classifier = check_and_cast<IQoSClassifier *>(inet::utils::createOne(classifierClass));
-//            numQueues = classifier->getNumQueues();
-//        }
-//
-//        for (int i = 0; i < numQueues; i++) {
-//            Edca catEdca;
-//            catEdca.backoff = false;
-//            catEdca.backoffPeriod = -1;
-//            catEdca.retryCounter = 0;
-//            edcCAF.push_back(catEdca);
-//        }
         // initialize parameters
         modeSet = Ieee80211ModeSet::getModeSet(*par("opMode").stringValue());
 
@@ -151,41 +121,6 @@ void Ieee80211Mac::initialize(int stage)
             cwMinMulticast = 31;
         ASSERT(cwMinMulticast >= 0);
         EV_DEBUG << " cwMinMulticast=" << cwMinMulticast;
-
-//        defaultAC = par("defaultAC");
-//        if (classifier && dynamic_cast<Ieee80211eClassifier *>(classifier))
-//            static_cast<Ieee80211eClassifier *>(classifier)->setDefaultClass(defaultAC);
-
-//        for (int i = 0; i < edca->numCategories(); i++) {
-//            std::stringstream os;
-//            os << i;
-//            std::string strAifs = "AIFSN" + os.str();
-//            std::string strTxop = "TXOP" + os.str();
-//            if (hasPar(strAifs.c_str()) && hasPar(strTxop.c_str())) {
-//                AIFSN(i) = par(strAifs.c_str());
-//                TXOP(i) = par(strTxop.c_str());
-//            }
-//            else
-//                throw cRuntimeError("parameters %s , %s don't exist", strAifs.c_str(), strTxop.c_str());
-//        }
-//        if (edca->numCategories() == 1)
-//            AIFSN(0) = par("AIFSN");
-//
-//        for (int i = 0; i < edca->numCategories(); i++) {
-//            ASSERT(AIFSN(i) >= 0 && AIFSN(i) < 16);
-//            if (i == 0 || i == 1) {
-//                cwMin(i) = cwMinData;
-//                cwMax(i) = cwMaxData;
-//            }
-//            if (i == 2) {
-//                cwMin(i) = (cwMinData + 1) / 2 - 1;
-//                cwMax(i) = cwMinData;
-//            }
-//            if (i == 3) {
-//                cwMin(i) = (cwMinData + 1) / 4 - 1;
-//                cwMax(i) = (cwMinData + 1) / 2 - 1;
-//            }
-//        }
 
         ST = par("slotTime");    //added by sorin
         if (ST == -1)
@@ -252,25 +187,10 @@ void Ieee80211Mac::initialize(int stage)
         mode = DCF;
         sequenceNumber = 0;
 
-//        currentAC = 0;
-//        edca->getOldcurrentAc() = 0;
         lastReceiveFailed = false;
-//        for (int i = 0; i < edca->numCategories(); i++)
-//            numDropped(i) = 0;
         nav = false;
         txop = false;
         last = 0;
-
-        // statistics
-//        for (int i = 0; i < edca->numCategories(); i++) {
-//            numRetry(i) = 0;
-//            numSentWithoutRetry(i) = 0;
-//            numGivenUp(i) = 0;
-//            numSent(i) = 0;
-//            bits(i) = 0;
-//            maxJitter(i) = SIMTIME_ZERO;
-//            minJitter(i) = SIMTIME_ZERO;
-//        }
 
         numCollision = 0;
         numInternalCollision = 0;
@@ -284,18 +204,6 @@ void Ieee80211Mac::initialize(int stage)
 
         stateVector.setName("State");
         stateVector.setEnum("inet::Ieee80211Mac");
-//        for (int i = 0; i < edca->numCategories(); i++) {
-//            EdcaOutVector outVectors;
-//            std::stringstream os;
-//            os << i;
-//            std::string th = "throughput AC" + os.str();
-//            std::string delay = "Mac delay AC" + os.str();
-//            std::string jit = "jitter AC" + os.str();
-//            outVectors.jitter = new cOutVector(jit.c_str());
-//            outVectors.throughput = new cOutVector(th.c_str());
-//            outVectors.macDelay = new cOutVector(delay.c_str());
-//            edcCAFOutVector.push_back(outVectors);
-//        }
         // Code to compute the throughput over a period of time
         throughputTimePeriod = par("throughputTimePeriod");
         recBytesOverPeriod = 0;
@@ -329,35 +237,14 @@ void Ieee80211Mac::initWatches()
 {
 // initialize watches
     WATCH(fsm);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].retryCounter);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].backoff);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].backoffPeriod);
-//    WATCH(currentAC);
-//    WATCH(edca->getOldcurrentAc());
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH_LIST(edcCAF[i].transmissionQueue);
     WATCH(nav);
     WATCH(txop);
-
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].numRetry);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].numSentWithoutRetry);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].numGivenUp);
     WATCH(numCollision);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].numSent);
     WATCH(numBits);
     WATCH(numSentTXOP);
     WATCH(numReceived);
     WATCH(numSentMulticast);
     WATCH(numReceivedMulticast);
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        WATCH(edcCAF[i].numDropped);
     if (throughputTimer)
         WATCH(throughputLastPeriod);
 }
@@ -367,38 +254,8 @@ void Ieee80211Mac::finish()
     recordScalar("number of received packets", numReceived);
     recordScalar("number of collisions", numCollision);
     recordScalar("number of internal collisions", numInternalCollision);
-//    for (int i = 0; i < edca->numCategories(); i++) {
-//        std::stringstream os;
-//        os << i;
-//        std::string th = "number of retry for AC " + os.str();
-//        recordScalar(th.c_str(), numRetry(i));
-//    }
     recordScalar("sent and received bits", numBits);
-//    for (int i = 0; i < edca->numCategories(); i++) {
-//        std::stringstream os;
-//        os << i;
-//        std::string th = "sent packet within AC " + os.str();
-//        recordScalar(th.c_str(), numSent(i));
-//    }
     recordScalar("sent in TXOP ", numSentTXOP);
-//    for (int i = 0; i < edca->numCategories(); i++) {
-//        std::stringstream os;
-//        os << i;
-//        std::string th = "sentWithoutRetry AC " + os.str();
-//        recordScalar(th.c_str(), numSentWithoutRetry(i));
-//    }
-//    for (int i = 0; i < edca->numCategories(); i++) {
-//        std::stringstream os;
-//        os << i;
-//        std::string th = "numGivenUp AC " + os.str();
-//        recordScalar(th.c_str(), numGivenUp(i));
-//    }
-//    for (int i = 0; i < edca->numCategories(); i++) {
-//        std::stringstream os;
-//        os << i;
-//        std::string th = "numDropped AC " + os.str();
-//        recordScalar(th.c_str(), numDropped(i));
-//    }
 }
 
 InterfaceEntry *Ieee80211Mac::createInterfaceEntry()
@@ -452,40 +309,6 @@ void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 
     if (msg == endTXOP)
         txop = false;
-//
-//    if (!strcmp(msg->getName(), "AIFS") || !strcmp(msg->getName(), "Backoff")) {
-//        EV_DEBUG << "Changing currentAC to " << msg->getKind() << endl;
-//        currentAC = msg->getKind();
-//    }
-//    //check internal collision
-//    if ((strcmp(msg->getName(), "Backoff") == 0) || (strcmp(msg->getName(), "AIFS") == 0)) {
-//        int kind;
-//        kind = msg->getKind();
-//        if (kind < 0)
-//            kind = 0;
-//        EV_DEBUG << " kind is " << kind << ",name is " << msg->getName() << endl;
-//        for (unsigned int i = edca->numCategories() - 1; (int)i > kind; i--) {    //mozna prochaze jen 3..kind XXX
-//            if (((endBackoff(i)->isScheduled() && endBackoff(i)->getArrivalTime() == simTime())
-//                 || (endAIFS(i)->isScheduled() && !backoff(i) && endAIFS(i)->getArrivalTime() == simTime()))
-//                && !transmissionQueue(i)->empty())
-//            {
-//                EV_DEBUG << "Internal collision AC" << kind << " with AC" << i << endl;
-//                numInternalCollision++;
-//                EV_DEBUG << "Cancel backoff event and schedule new one for AC" << kind << endl;
-//                cancelEvent(endBackoff(kind));
-//                if (edca->retryCounter() == transmissionLimit - 1) {
-//                    EV_WARN << "give up transmission for AC" << currentAC << endl;
-//                    giveUpCurrentTransmission();
-//                }
-//                else {
-//                    EV_WARN << "retry transmission for AC" << currentAC << endl;
-//                    retryCurrentTransmission();
-//                }
-//                return;
-//            }
-//        }
-//        currentAC = kind;
-//    }
     handleWithFSM(msg);
 }
 
@@ -525,56 +348,6 @@ void Ieee80211Mac::handleUpperPacket(cPacket *msg)
     frame->setMACArrive(simTime());
     handleWithFSM(frame);
 }
-
-//int Ieee80211Mac::mappingAccessCategory(Ieee80211DataOrMgmtFrame *frame)
-//{
-//    bool isDataFrame = (dynamic_cast<Ieee80211DataFrame *>(frame) != nullptr);
-//
-//    edca->getCurrentAc() = classifier ? classifier->classifyPacket(frame) : 0;
-//
-//    // check for queue overflow
-//    if (isDataFrame && maxQueueSize && (int)transmissionQueueSize() >= maxQueueSize) {
-//        EV_WARN << "message " << frame << " received from higher layer but AC queue is full, dropping message\n";
-//        edca->numDropped()++;
-//        delete frame;
-//        return 200;
-//    }
-//    if (isDataFrame) {
-//        if (!prioritizeMulticast || !frame->getReceiverAddress().isMulticast() || edca->transmissionQueue()->size() < 2)
-//            edca->transmissionQueue()->push_back(frame);
-//        else {
-//            // current frame is multicast, insert it prior to any unicast dataframe
-//            ASSERT(edca->transmissionQueue()->size() >= 2);
-//            auto p = edca->transmissionQueue()->end();
-//            --p;
-//            while (p != edca->transmissionQueue()->begin()) {
-//                if (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)
-//                    break;  // management frame
-//                if ((*p)->getReceiverAddress().isMulticast())
-//                    break;  // multicast frame
-//                --p;
-//            }
-//            ++p;
-//            edca->transmissionQueue()->insert(p, frame);
-//        }
-//    }
-//    else {
-//        if (edca->transmissionQueue()->size() < 2) {
-//            edca->transmissionQueue()->push_back(frame);
-//        }
-//        else {
-//            //we don't know if first frame in the queue is in middle of transmission
-//            //so for sure we placed it on second place
-//            auto p = edca->transmissionQueue()->begin();
-//            p++;
-//            while ((p != edca->transmissionQueue()->end()) && (dynamic_cast<Ieee80211DataFrame *>(*p) == nullptr)) // search the first not management frame
-//                p++;
-//            edca->transmissionQueue()->insert(p, frame);
-//        }
-//    }
-//    EV_DEBUG << "frame classified as access category " << currentAC << " (0 background, 1 best effort, 2 video, 3 voice)\n";
-//    return true;
-//}
 
 void Ieee80211Mac::handleUpperCommand(cMessage *msg)
 {
@@ -1788,11 +1561,6 @@ void Ieee80211Mac::retryCurrentTransmission()
     generateBackoffPeriod();
 }
 
-//Ieee80211DataOrMgmtFrame *Ieee80211Mac::getCurrentTransmission()
-//{
-//    return edca->transmissionQueue()->empty() ? nullptr : (Ieee80211DataOrMgmtFrame *)edca->transmissionQueue()->front();
-//}
-
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()
 {
     if (pendingRadioConfigMsg != nullptr) {
@@ -1975,23 +1743,6 @@ const char *Ieee80211Mac::modeName(int mode)
     return s;
 #undef CASE
 }
-
-//bool Ieee80211Mac::transmissionQueueEmpty()
-//{
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        if (!transmissionQueue(i)->empty())
-//            return false;
-//
-//    return true;
-//}
-//
-//unsigned int Ieee80211Mac::transmissionQueueSize()
-//{
-//    unsigned int totalSize = 0;
-//    for (int i = 0; i < edca->numCategories(); i++)
-//        totalSize += transmissionQueue(i)->size();
-//    return totalSize;
-//}
 
 void Ieee80211Mac::flushQueue()
 {
