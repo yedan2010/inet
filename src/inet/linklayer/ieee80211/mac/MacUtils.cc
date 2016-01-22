@@ -45,37 +45,52 @@ simtime_t MacUtils::getCtsDuration() const
     return rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_CTS);
 }
 
+simtime_t MacUtils::getTimeout(simtime_t duration, bool usePifs) const
+{
+    return (usePifs ? timingParameters->getPifsTime() : timingParameters->getSifsTime()) + timingParameters->getSlotTime() + duration;
+}
+
+simtime_t MacUtils::getEarlyTimeout(bool usePifs) const
+{
+    return (usePifs ? timingParameters->getPifsTime() : timingParameters->getSifsTime()) + timingParameters->getSlotTime() + params->getPhyRxStartDelay();
+}
+
 simtime_t MacUtils::getAckEarlyTimeout() const
 {
     // Note: This excludes ACK duration. If there's no RXStart indication within this interval, retransmission should begin immediately
-    return params->getSifsTime() + params->getSlotTime() + params->getPhyRxStartDelay();
+    return timingParameters->getSifsTime() + timingParameters->getSlotTime() + params->getPhyRxStartDelay();
 }
 
 simtime_t MacUtils::getAckFullTimeout() const
 {
-    return params->getSifsTime() + params->getSlotTime() + getAckDuration();
+    return timingParameters->getSifsTime() + timingParameters->getSlotTime() + getAckDuration();
 }
 
 simtime_t MacUtils::getCtsEarlyTimeout() const
 {
-    return params->getSifsTime() + params->getSlotTime() + params->getPhyRxStartDelay(); // see getAckEarlyTimeout()
+    return timingParameters->getSifsTime() + timingParameters->getSlotTime() + params->getPhyRxStartDelay(); // see getAckEarlyTimeout()
 }
 
 simtime_t MacUtils::getCtsFullTimeout() const
 {
-    return params->getSifsTime() + params->getSlotTime() + getCtsDuration();
+    return timingParameters->getSifsTime() + timingParameters->getSlotTime() + getCtsDuration();
 }
 
 Ieee80211RTSFrame *MacUtils::buildRtsFrame(Ieee80211DataOrMgmtFrame *dataFrame) const
 {
-    return buildRtsFrame(dataFrame, getFrameMode(dataFrame));
+    const IIeee80211Mode *mode = dataFrame->getControlInfo() ? getFrameMode(dataFrame) : nullptr;
+    if (isBroadcastOrMulticast(dataFrame))
+        mode = rateSelection->getModeForMulticastDataOrMgmtFrame(dataFrame);
+    else
+        mode = rateSelection->getModeForUnicastDataOrMgmtFrame(dataFrame);
+    return buildRtsFrame(dataFrame, mode);
 }
 
 Ieee80211RTSFrame *MacUtils::buildRtsFrame(Ieee80211DataOrMgmtFrame *dataFrame, const IIeee80211Mode *dataFrameMode) const
 {
     // protect CTS + Data + ACK
     simtime_t duration =
-            3 * params->getSifsTime()
+            3 * timingParameters->getSifsTime()
             + rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_CTS)
             + dataFrameMode->getDuration(dataFrame->getBitLength())
             + rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_ACK);
@@ -84,34 +99,58 @@ Ieee80211RTSFrame *MacUtils::buildRtsFrame(Ieee80211DataOrMgmtFrame *dataFrame, 
 
 Ieee80211RTSFrame *MacUtils::buildRtsFrame(const MACAddress& receiverAddress, simtime_t duration) const
 {
-    Ieee80211RTSFrame *rtsFrame = new Ieee80211RTSFrame("RTS");
-    rtsFrame->setTransmitterAddress(params->getAddress());
-    rtsFrame->setReceiverAddress(receiverAddress);
-    rtsFrame->setDuration(duration);
-    setFrameMode(rtsFrame, rateSelection->getModeForControlFrame(rtsFrame));
-    return rtsFrame;
+    Ieee80211RTSFrame *rts = new Ieee80211RTSFrame("RTS");
+    rts->setTransmitterAddress(params->getAddress());
+    rts->setReceiverAddress(receiverAddress);
+    rts->setDuration(duration);
+    setFrameMode(rts, rateSelection->getModeForControlFrame(rts));
+    return rts;
 }
 
 Ieee80211CTSFrame *MacUtils::buildCtsFrame(Ieee80211RTSFrame *rtsFrame) const
 {
-    Ieee80211CTSFrame *frame = new Ieee80211CTSFrame("CTS");
-    frame->setReceiverAddress(rtsFrame->getTransmitterAddress());
-    frame->setDuration(rtsFrame->getDuration() - params->getSifsTime() - rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_CTS));
+    Ieee80211CTSFrame *cts = new Ieee80211CTSFrame("CTS");
+    cts->setReceiverAddress(rtsFrame->getTransmitterAddress());
+    cts->setDuration(rtsFrame->getDuration() - timingParameters->getSifsTime() - rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_CTS));
     setFrameMode(rtsFrame, rateSelection->getModeForControlFrame(rtsFrame));
-    return frame;
+    return cts;
 }
 
 Ieee80211ACKFrame *MacUtils::buildAckFrame(Ieee80211DataOrMgmtFrame *dataFrame) const
 {
-    Ieee80211ACKFrame *ackFrame = new Ieee80211ACKFrame("ACK");
-    ackFrame->setReceiverAddress(dataFrame->getTransmitterAddress());
-
+    Ieee80211ACKFrame *ack = new Ieee80211ACKFrame("ACK");
+    ack->setReceiverAddress(dataFrame->getTransmitterAddress());
     if (!dataFrame->getMoreFragments())
-        ackFrame->setDuration(0);
+        ack->setDuration(0);
     else
-        ackFrame->setDuration(dataFrame->getDuration() - params->getSifsTime() - rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_ACK));
-    setFrameMode(ackFrame, rateSelection->getModeForControlFrame(ackFrame));
-    return ackFrame;
+        ack->setDuration(dataFrame->getDuration() - timingParameters->getSifsTime() - rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_ACK));
+    setFrameMode(ack, rateSelection->getModeForControlFrame(ack));
+    return ack;
+}
+
+Ieee80211BlockAckReq* MacUtils::buildBlockAckReqFrame(const MACAddress& receiverAddress, int startingSequenceNumber) const
+{
+    Ieee80211CompressedBlockAckReq *blockAckReq = new Ieee80211CompressedBlockAckReq("BlockAckReq");
+    blockAckReq->setTransmitterAddress(params->getAddress());
+    blockAckReq->setReceiverAddress(receiverAddress);
+    blockAckReq->setDuration(timingParameters->getSifsTime());
+    // TODO:
+    blockAckReq->setStartingSequenceNumber(startingSequenceNumber);
+    return blockAckReq;
+}
+
+Ieee80211BlockAck* MacUtils::buildBlockAckFrame(Ieee80211BlockAckReq* blockAckReq) const
+{
+    Ieee80211CompressedBlockAck *blockAck = new Ieee80211CompressedBlockAck("BlockAck");
+    blockAck->setTransmitterAddress(params->getAddress());
+    blockAck->setReceiverAddress(blockAckReq->getTransmitterAddress());
+    blockAck->setDuration(0);
+    blockAck->setCompressedBitmap(true);
+    BitVector &bitmap = blockAck->getBlockAckBitmap();
+    for (int i = 0; i < 64; i++) {
+        bitmap.setBit(i, true);
+    }
+    return blockAck;
 }
 
 Ieee80211Frame *MacUtils::setFrameMode(Ieee80211Frame *frame, const IIeee80211Mode *mode) const
@@ -182,7 +221,6 @@ simtime_t MacUtils::getTxopLimit(AccessCategory ac, const IIeee80211Mode *mode)
             if (dynamic_cast<const Ieee80211DsssMode*>(mode) || dynamic_cast<const Ieee80211HrDsssMode*>(mode)) return ms(3.264).get();
             else if (dynamic_cast<const Ieee80211HTMode*>(mode) || dynamic_cast<const Ieee80211OFDMMode*>(mode)) return ms(1.504).get();
             else return 0;
-        case AC_LEGACY: return 0;
         case AC_NUMCATEGORIES: break;
     }
     throw cRuntimeError("Unknown access category = %d", ac);
@@ -197,7 +235,6 @@ int MacUtils::getAifsNumber(AccessCategory ac)
         case AC_BE: return 3;
         case AC_VI: return 2;
         case AC_VO: return 2;
-        case AC_LEGACY: return 2;
         case AC_NUMCATEGORIES: break;
     }
     throw cRuntimeError("Unknown access category = %d", ac);
@@ -212,7 +249,6 @@ int MacUtils::getCwMax(AccessCategory ac, int aCwMax, int aCwMin)
         case AC_BE: return aCwMax;
         case AC_VI: return aCwMin;
         case AC_VO: return (aCwMin + 1) / 2 - 1;
-        case AC_LEGACY: return aCwMax;
         case AC_NUMCATEGORIES: break;
     }
     throw cRuntimeError("Unknown access category = %d", ac);
@@ -227,28 +263,12 @@ int MacUtils::getCwMin(AccessCategory ac, int aCwMin)
         case AC_BE: return aCwMin;
         case AC_VI: return (aCwMin + 1) / 2 - 1;
         case AC_VO: return (aCwMin + 1) / 4 - 1;
-        case AC_LEGACY: return aCwMin;
         case AC_NUMCATEGORIES: break;
     }
     throw cRuntimeError("Unknown access category = %d", ac);
     return -1;
 }
 
-
-int MacUtils::cmpMgmtOverData(Ieee80211DataOrMgmtFrame *a, Ieee80211DataOrMgmtFrame *b)
-{
-    int aPri = dynamic_cast<Ieee80211ManagementFrame*>(a) ? 1 : 0;  //TODO there should really exist a high-performance isMgmtFrame() function!
-    int bPri = dynamic_cast<Ieee80211ManagementFrame*>(b) ? 1 : 0;
-    return bPri - aPri;
-}
-
-int MacUtils::cmpMgmtOverMulticastOverUnicast(Ieee80211DataOrMgmtFrame *a, Ieee80211DataOrMgmtFrame *b)
-{
-    int aPri = dynamic_cast<Ieee80211ManagementFrame*>(a) ? 2 : a->getReceiverAddress().isMulticast() ? 1 : 0;
-    int bPri = dynamic_cast<Ieee80211ManagementFrame*>(a) ? 2 : b->getReceiverAddress().isMulticast() ? 1 : 0;
-    return bPri - aPri;
-}
-
-
 } // namespace ieee80211
 } // namespace inet
+

@@ -20,21 +20,17 @@
 #ifndef __INET_MACUTILS_H
 #define __INET_MACUTILS_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
 #include "inet/linklayer/common/MACAddress.h"
+#include "inet/linklayer/ieee80211/mac/TimingParameters.h"
 #include "inet/linklayer/ieee80211/mac/AccessCategory.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 
 using namespace inet::physicallayer;
 
 namespace inet {
 namespace ieee80211 {
 
-class Ieee80211Frame;
-class Ieee80211RTSFrame;
-class Ieee80211CTSFrame;
-class Ieee80211ACKFrame;
-class Ieee80211DataOrMgmtFrame;
 class IMacParameters;
 class IRateSelection;
 
@@ -45,6 +41,7 @@ class INET_API MacUtils
 {
     private:
         IMacParameters *params;
+        TimingParameters *timingParameters;
         IRateSelection *rateSelection;
 
     public:
@@ -58,11 +55,16 @@ class INET_API MacUtils
         virtual simtime_t getCtsEarlyTimeout() const;
         virtual simtime_t getCtsFullTimeout() const;
 
+        virtual simtime_t getTimeout(simtime_t duration, bool usePifs) const;
+        virtual simtime_t getEarlyTimeout(bool usePifs) const;
+
         virtual Ieee80211RTSFrame *buildRtsFrame(Ieee80211DataOrMgmtFrame *dataFrame) const;
         virtual Ieee80211RTSFrame *buildRtsFrame(Ieee80211DataOrMgmtFrame *dataFrame, const IIeee80211Mode *dataFrameMode) const;
         virtual Ieee80211RTSFrame *buildRtsFrame(const MACAddress& receiverAddress, simtime_t duration) const;
         virtual Ieee80211CTSFrame *buildCtsFrame(Ieee80211RTSFrame *rtsFrame) const;
         virtual Ieee80211ACKFrame *buildAckFrame(Ieee80211DataOrMgmtFrame *dataFrame) const;
+        virtual Ieee80211BlockAckReq *buildBlockAckReqFrame(const MACAddress& receiverAddress, int startingSequenceNumber) const;
+        virtual Ieee80211BlockAck *buildBlockAckFrame(Ieee80211BlockAckReq *blockAckReq) const;
 
         virtual Ieee80211Frame *setFrameMode(Ieee80211Frame *frame, const IIeee80211Mode *mode) const;
         virtual const IIeee80211Mode *getFrameMode(Ieee80211Frame *frame) const;

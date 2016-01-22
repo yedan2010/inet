@@ -87,25 +87,26 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
                                           // "auto". "auto" values will be replaced by
                                           // a generated MAC address in init stage 0.
         string rateControlModuleType = default("");
+        string aMsduAggregatorModuleType = default("");
+        string upperMacModuleType = default("TheUpperMac"); // TODO
+
         string upperMacModule = ".upperMac";
         string rxModule = ".rx";
         string txModule = ".tx";
-        string firstContentionModule = ".ctn[0]";
-        int numContention = default(4);
-        string collisionControllerModule = ".ctrl";
+        int numContention = default(5);
         string rateSelectionModule = ".rateSelection";
         string rateControlModule = ".rateControl";
         string statisticsModule = ".statistics";
+        string msduAggregatorModule = ".msduAggregator";
 
         *.macModule = "^";
         *.upperMacModule = "^" + upperMacModule;
         *.rxModule = "^" + rxModule;
         *.txModule = "^" + txModule;
-        *.firstContentionModule = "^" + firstContentionModule;
-        *.collisionControllerModule = "^" + collisionControllerModule;
         *.rateSelectionModule = "^" + rateSelectionModule;
         *.rateControlModule = "^" + rateControlModule;
         *.statisticsModule = "^" + statisticsModule;
+        *.msduAggregatorModule = "^" + msduAggregatorModule;
 
         @display("i=block/layer;bgb=721,355");
         @class(Ieee80211Mac);
@@ -115,6 +116,9 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
         @statistic[rcvdPkFromLL](title="packets received from lower layer"; source=packetReceivedFromLower; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
 
     submodules:
+        msduAggregator: <aMsduAggregatorModuleType> like IMsduAggregation if aMsduAggregatorModuleType != "" {
+            @display("p=49,155");
+        }
         rateSelection: <default("BasicRateSelection")> like IRateSelection {
             @display("p=492,66");
         }
@@ -124,20 +128,17 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
         statistics: <default("BasicStatistics")> like IStatistics {
             @display("p=49,66");
         }
-        upperMac: <default("EdcaUpperMac")> like IUpperMac {
+        upperMac: <upperMacModuleType> like IUpperMac {
             @display("p=227,88");
         }
         tx: <default("Tx")> like ITx {
             @display("p=198,260");
         }
-        ctn[numContention]: <default("Contention")> like IContention {
-            @display("p=295,260,r,60");
-        }
+//        ctn[numContention]: <default("Contention")> like IContention {
+//            @display("p=295,260,r,60");
+//        }
         rx: <default("Rx")> like IRx {
             @display("p=112,260");
-        }
-        ctrl: <default("CollisionController")> like ICollisionController if numContention > 1 {
-            @display("p=334,180");
         }
 }
 
@@ -172,8 +173,9 @@ module Ieee80211CompatibleMac extends Ieee80211Mac
         int cwMaxData = default(-1); // contention window for normal data frames, -1 means default
         int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
-        upperMac.typename = EDCA ? "EdcaUpperMac" : "DcfUpperMac";
-        numContention = EDCA ? 4 : 1;
+        //upperMac.typename = EDCA ? "EdcaUpperMac" : "DcfUpperMac";
+        upperMac.typename = "TheDcf";
+        numContention = EDCA ? 5 : 1;
 
         rateSelection.modeSet = opMode; // BasicRateSelection
         rateSelection.dataBitrate = bitrate; // BasicRateSelection

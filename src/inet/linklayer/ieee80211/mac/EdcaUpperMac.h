@@ -23,7 +23,9 @@
 #include "IUpperMac.h"
 #include "IFrameExchange.h"
 #include "AccessCategory.h"
+#include "ITxCallback.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
+#include "UpperMacTxRetryHandler.h"
 
 using namespace inet::physicallayer;
 
@@ -46,11 +48,12 @@ class IReassembly;
 class IRateSelection;
 class IRateControl;
 class IStatistics;
+class IMsduAggregation;
 
 /**
  * UpperMac for EDCA (802.11e QoS mode)
  */
-class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, protected IFrameExchange::IFinishedCallback
+class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, public IContentionCallback, protected IFrameExchange::IFinishedCallback
 {
     public:
         typedef std::list<Ieee80211DataOrMgmtFrame*> Ieee80211DataOrMgmtFrameList;
@@ -61,7 +64,8 @@ class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, protected 
         Ieee80211Mac *mac = nullptr;
         IRx *rx = nullptr;
         ITx *tx = nullptr;
-        IContention **contention = nullptr;
+        IContention **contention;
+        UpperMacTxRetryHandler **txRetryHandler = nullptr;
 
         int maxQueueSize;
         int fragmentationThreshold = 2346;
@@ -72,6 +76,7 @@ class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, protected 
         };
         AccessCategoryData *acData = nullptr;  // dynamically allocated array
 
+        IMsduAggregation *msduAggregator = nullptr;
         IDuplicateDetector *duplicateDetection = nullptr;
         IFragmenter *fragmenter = nullptr;
         IReassembly *reassembly = nullptr;
@@ -84,23 +89,31 @@ class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, protected 
         virtual void handleMessage(cMessage *msg) override;
         IMacParameters *extractParameters(const IIeee80211Mode *slowestMandatoryMode);
 
+        virtual void startContention(AccessCategory ac);
         virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
         virtual AccessCategory mapTidToAc(int tid);
         virtual void enqueue(Ieee80211DataOrMgmtFrame *frame, AccessCategory ac);
+        Ieee80211DataOrMgmtFrame* dequeue(AccessCategory ac);
+        Ieee80211DataOrMgmtFrame *aggregateIfPossible(AccessCategory ac);
+        bool fragmentIfPossible(Ieee80211DataOrMgmtFrame *nextFrame, bool aMsduPresent, AccessCategory ac);
+        void assignSequenceNumber(Ieee80211DataOrMgmtFrame *frame);
         virtual void startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac);
+
         virtual void frameExchangeFinished(IFrameExchange *what, bool successful) override;
+        virtual void frameTransmissionFailed(IFrameExchange *what, Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac) override;
+        virtual void frameTransmissionSucceeded(IFrameExchange *what, Ieee80211Frame *frame, AccessCategory ac) override;
 
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
         void sendCts(Ieee80211RTSFrame *frame);
 
     public:
         EdcaUpperMac();
-        virtual ~EdcaUpperMac();
+        ~EdcaUpperMac();
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedFrameReceived() override;
-        virtual void channelAccessGranted(IContentionCallback *callback, int txIndex) override;
-        virtual void internalCollision(IContentionCallback *callback, int txIndex) override;
+        virtual void channelAccessGranted(int txIndex);
+        virtual void internalCollision(int txIndex);
         virtual void transmissionComplete(ITxCallback *callback) override;
 };
 

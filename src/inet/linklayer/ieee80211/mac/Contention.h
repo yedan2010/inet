@@ -29,10 +29,8 @@ namespace ieee80211 {
 
 using namespace inet::physicallayer;
 
-class IUpperMac;
 class IMacRadioInterface;
 class IRx;
-class IStatistics;
 
 /**
  * The default implementation of IContention.
@@ -46,9 +44,7 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
 
     protected:
         IMacRadioInterface *mac;
-        IUpperMac *upperMac;
         ICollisionController *collisionController;  // optional
-        IStatistics *statistics;
         cMessage *startTxEvent = nullptr;  // in the absence of collisionController
         int txIndex;
 
@@ -59,7 +55,7 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         int cwMax = 0;
         simtime_t slotTime;
         int retryCount = 0;
-        IContentionCallback *callback = nullptr;
+        IContentionCallback *contentionCallback = nullptr;
 
         cFSM fsm;
         simtime_t endEifsTime = SIMTIME_ZERO;
@@ -85,8 +81,6 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         virtual void cancelTransmissionRequest();
         virtual void switchToEifs();
         virtual void computeRemainingBackoffSlots();
-        virtual void reportChannelAccessGranted();
-        virtual void reportInternalCollision();
         virtual void revokeBackoffOptimization();
         virtual void updateDisplayString();
         const char *getEventName(EventType event);
@@ -96,12 +90,13 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         ~Contention();
 
         //TODO also add a switchToReception() method? because switching takes time, so we dont automatically switch to tx after completing a transmission! (as we may want to transmit immediate frames afterwards)
-        virtual void startContention(simtime_t ifs, simtime_t eifs, int cwMin, int cwMax, simtime_t slotTime, int retryCount, IContentionCallback *callback) override;
+        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContentionCallback *callback) override;
         virtual void channelReleased() override;
 
         virtual void mediumStateChanged(bool mediumFree) override;
         virtual void corruptedFrameReceived() override;
         virtual bool isOwning() override;
+        virtual bool isContentionInProgress() override;
 };
 
 } // namespace ieee80211

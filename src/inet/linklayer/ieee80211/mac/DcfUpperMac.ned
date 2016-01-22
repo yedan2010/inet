@@ -28,10 +28,10 @@ simple DcfUpperMac like IUpperMac
         string macModule;
         string rxModule;
         string txModule;
-        string firstContentionModule;
         string rateSelectionModule;
         string rateControlModule;
         string statisticsModule;
+        string msduAggregatorModule;
 
         int rtsThreshold @unit("B") = default(2346B); // longer frames will be sent using RTS/CTS
         int shortRetryLimit = default(-1); // maximum number of retries per frame, -1 means default
@@ -49,4 +49,8 @@ simple DcfUpperMac like IUpperMac
         string reassemblyClass = default("BasicReassembly");
         @display("i=block/layer");
         @signal[NF_LINK_BREAK](type=Ieee80211DataOrMgmtFrame);
+
+//    submodules:
+
+
 }

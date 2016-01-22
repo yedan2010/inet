@@ -31,6 +31,8 @@
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
 
+#include "inet/linklayer/ieee80211/mac/IFrameSequence.h"
+
 namespace inet {
 namespace ieee80211 {
 
@@ -68,7 +70,6 @@ void Ieee80211Mac::initialize(int stage)
         upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
         rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
         tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
-        collectContentionModules(getModuleByPath(par("firstContentionModule")), contention);
 
         const char *addressString = par("address");
         if (!strcmp(addressString, "auto")) {

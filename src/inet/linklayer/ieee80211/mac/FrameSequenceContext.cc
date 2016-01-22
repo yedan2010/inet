@@ -17,31 +17,34 @@
 // Author: Andras Varga
 //
 
-#include "MacPlugin.h"
+#include "inet/linklayer/ieee80211/mac/FrameSequenceContext.h"
 
 namespace inet {
 namespace ieee80211 {
 
-void MacPlugin::scheduleAt(simtime_t t, cMessage *msg)
+FrameSequenceContext::FrameSequenceContext(InProgressFrames *inProgressFrames, MacUtils *utils, IMacParameters *params, TimingParameters *timingParameters, TxOp *txOp) :
+    inProgressFrames(inProgressFrames),
+    txOp(txOp),
+    timingParameters(timingParameters),
+    utils(utils),
+    params(params)
 {
-    cContextSwitcher tmp(ownerModule);
-    msg->setContextPointer(this);
-    ownerModule->scheduleAt(t, msg);
 }
 
-cMessage *MacPlugin::cancelEvent(cMessage *msg)
+FrameSequenceContext::~FrameSequenceContext()
 {
-    cContextSwitcher tmp(ownerModule);
-    ASSERT(msg->getContextPointer() == nullptr || msg->getContextPointer() == this);
-    ownerModule->cancelEvent(msg);
-    return msg;
+    for (auto step : steps)
+        delete step;
 }
 
-void MacPlugin::cancelAndDelete(cMessage *msg)
+bool FrameSequenceContext::hasFrameToTransmit()
 {
-    cContextSwitcher tmp(ownerModule);
-    ASSERT(msg->getContextPointer() == nullptr || msg->getContextPointer() == this);
-    ownerModule->cancelAndDelete(msg);
+    return !inProgressFrames->hasInProgressFrames();
+}
+
+Ieee80211Frame *FrameSequenceContext::getFrameToTransmit()
+{
+    return inProgressFrames->getFrameToTransmit();
 }
 
 } // namespace ieee80211

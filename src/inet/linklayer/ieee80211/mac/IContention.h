@@ -43,16 +43,16 @@ class INET_API IContention
 {
     public:
         virtual ~IContention() {}
-        virtual void startContention(simtime_t ifs, simtime_t eifs, int cwMin, int cwMax, simtime_t slotTime, int retryCount, IContentionCallback *callback) = 0;
+        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContentionCallback *callback) = 0;
 
         // notifications
         virtual void mediumStateChanged(bool mediumFree) = 0;
         virtual void corruptedFrameReceived() = 0;
         virtual void channelReleased() = 0;
-        virtual bool isOwning() = 0;
-};
 
-void collectContentionModules(cModule *firstContentionModule, IContention **& contention);
+        virtual bool isOwning() = 0;
+        virtual bool isContentionInProgress() = 0;
+};
 
 } // namespace ieee80211
 } // namespace inet

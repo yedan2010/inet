@@ -26,12 +26,10 @@ simple Contention like IContention
 {
     parameters:
         string macModule;
-        string upperMacModule;
         string collisionControllerModule;
         string rxModule;
-        string statisticsModule;
         bool initialChannelBusy = default(true); // assume that channel was busy before the simulation started
-        bool backoffOptimization = default(true); // pretend the frame has arrived into the queue a little bit earlier, and start transmitting immediately
+        bool backoffOptimization = default(true);    // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately
         @display("i=block/control");
         @signal[stateChanged](type=long); // TODO: enum=inet::ieee80211::Contention::State
         @statistic[state](title="contention state"; source=stateChanged; record=vector; interpolationmode=none);

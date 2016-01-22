@@ -17,39 +17,11 @@
 // Author: Andras Varga
 //
 
-#ifndef __INET_MACPLUGIN_H
-#define __INET_MACPLUGIN_H
-
-#include "inet/common/INETDefs.h"
+#include "inet/linklayer/ieee80211/mac/FrameSequenceStep.h"
 
 namespace inet {
 namespace ieee80211 {
 
-/**
- * Base class for classes in the MAC that are not modules themselves
- * but need to schedule timers. MacPlugin implements timers by using
- * the facilities of the "host" or "container" module that the plugin
- * is part of.
- */
-class INET_API MacPlugin : public cOwnedObject
-{
-    protected:
-        cSimpleModule *ownerModule = nullptr;
-
-    public:
-        MacPlugin(cSimpleModule *ownerModule) : ownerModule(ownerModule) {}
-        virtual ~MacPlugin() {}
-
-    public:
-        virtual void handleSelfMessage(cMessage *msg) = 0;
-        virtual void scheduleAt(simtime_t t, cMessage *msg);
-        virtual cMessage *cancelEvent(cMessage *msg);
-        virtual void cancelAndDelete(cMessage *msg);
-
-};
-
 } // namespace ieee80211
 } // namespace inet
-
-#endif
 

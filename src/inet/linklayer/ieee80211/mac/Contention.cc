@@ -18,9 +18,8 @@
 //
 
 #include "Contention.h"
-#include "IUpperMac.h"
+#include "ITxCallback.h"
 #include "IMacRadioInterface.h"
-#include "IStatistics.h"
 #include "IRx.h"
 #include "inet/common/FSMA.h"
 #include "Ieee80211Frame_m.h"
@@ -29,7 +28,6 @@ namespace inet {
 namespace ieee80211 {
 
 simsignal_t Contention::stateChangedSignal = registerSignal("stateChanged");
-
 // for @statistic; don't forget to keep synchronized the C++ enum and the runtime enum definition
 Register_Enum(Contention::State,
         (Contention::IDLE,
@@ -39,27 +37,11 @@ Register_Enum(Contention::State,
 
 Define_Module(Contention);
 
-// non-member utility function
-void collectContentionModules(cModule *firstContentionModule, IContention **& contentionTx)
-{
-    ASSERT(firstContentionModule != nullptr);
-    int count = firstContentionModule->getVectorSize();
-
-    contentionTx = new IContention *[count + 1];
-    for (int i = 0; i < count; i++) {
-        cModule *sibling = firstContentionModule->getParentModule()->getSubmodule(firstContentionModule->getName(), i);
-        contentionTx[i] = check_and_cast<IContention *>(sibling);
-    }
-    contentionTx[count] = nullptr;
-}
-
 void Contention::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
         mac = check_and_cast<IMacRadioInterface *>(getModuleByPath(par("macModule")));
-        upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
         collisionController = dynamic_cast<ICollisionController *>(getModuleByPath(par("collisionControllerModule")));
-        statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
         backoffOptimization = par("backoffOptimization");
         lastIdleStartTime = simTime() - SimTime::getMaxTime() / 2;
 
@@ -101,28 +83,19 @@ Contention::~Contention()
     cancelAndDelete(startTxEvent);
 }
 
-void Contention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, int cwMax, simtime_t slotTime, int retryCount, IContentionCallback *callback)
+void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContentionCallback* callback)
 {
     Enter_Method("startContention()");
     ASSERT(fsm.getState() == IDLE);
     this->ifs = ifs;
     this->eifs = eifs;
-    this->cwMin = cwMin;
-    this->cwMax = cwMax;
     this->slotTime = slotTime;
-    this->retryCount = retryCount;
-    this->callback = callback;
+    this->contentionCallback = callback;
 
-    int cw = computeCw(cwMin, cwMax, retryCount);
-    backoffSlots = intrand(cw + 1);
-
-#ifdef NS3_VALIDATION
-    static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};
-    std::cout << "GB: " << "ac = " << AC[getIndex()] << ", cw = " << cw << ", slots = " << backoffSlots << ", nth = " << getRNG(0)->getNumbersDrawn() << std::endl;
-#endif
-
+    backoffSlots = cw;
     handleWithFSM(START, nullptr);
 }
+
 
 int Contention::computeCw(int cwMin, int cwMax, int retryCount)
 {
@@ -213,9 +186,9 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
-        reportChannelAccessGranted();
+        contentionCallback->channelAccessGranted(txIndex);
     if (finallyReportInternalCollision)
-        reportInternalCollision();
+        contentionCallback->internalCollision(txIndex);
     if (hasGUI())
         updateDisplayString();
 }
@@ -309,16 +282,6 @@ void Contention::computeRemainingBackoffSlots()
         backoffSlots = remainingSlots;
 }
 
-void Contention::reportChannelAccessGranted()
-{
-    upperMac->channelAccessGranted(callback, txIndex);
-}
-
-void Contention::reportInternalCollision()
-{
-    upperMac->internalCollision(callback, txIndex);
-}
-
 void Contention::revokeBackoffOptimization()
 {
     scheduledTransmissionTime += backoffOptimizationDelta;
@@ -363,6 +326,11 @@ void Contention::updateDisplayString()
 bool Contention::isOwning()
 {
     return fsm.getState() == OWNING;
+}
+
+bool Contention::isContentionInProgress()
+{
+    return fsm.getState() != IDLE;
 }
 
 } // namespace ieee80211

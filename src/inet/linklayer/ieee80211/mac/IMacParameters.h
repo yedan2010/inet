@@ -39,17 +39,10 @@ class INET_API IMacParameters
         virtual const MACAddress& getAddress() const = 0;
 
         // timing parameters
-        virtual bool isEdcaEnabled() const = 0;
         virtual simtime_t getSlotTime() const = 0;
         virtual simtime_t getSifsTime() const = 0;
-        virtual simtime_t getAifsTime(AccessCategory ac) const = 0;
-        virtual simtime_t getEifsTime(AccessCategory ac) const = 0;
         virtual simtime_t getPifsTime() const = 0;
         virtual simtime_t getRifsTime() const = 0;
-        virtual int getCwMin(AccessCategory ac) const = 0;
-        virtual int getCwMax(AccessCategory ac) const = 0;
-        virtual int getCwMulticast(AccessCategory ac) const = 0;
-        virtual simtime_t getTxopLimit(AccessCategory ac) const = 0;
 
         // other parameters
         virtual int getShortRetryLimit() const = 0;

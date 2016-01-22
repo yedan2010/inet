@@ -26,7 +26,6 @@ namespace inet {
 namespace ieee80211 {
 
 class Ieee80211Frame;
-class ITxCallback;
 
 /**
  * Abstract interface for unconditionally transmitting a frame immediately
@@ -36,8 +35,8 @@ class INET_API ITx
 {
     public:
         virtual ~ITx() {}
-        virtual void transmitFrame(Ieee80211Frame *frame, ITxCallback *txCallback) = 0;
-        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITxCallback *txCallback) = 0;
+        virtual void transmitFrame(Ieee80211Frame *frame) = 0;
+        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) = 0;
         virtual void radioTransmissionFinished() = 0;
 };
 

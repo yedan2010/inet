@@ -21,12 +21,12 @@
 #define __INET_IUPPERMAC_H
 
 #include "inet/common/INETDefs.h"
+#include "AccessCategory.h"
 
 namespace inet {
 namespace ieee80211 {
 
 class IContentionCallback;
-class ITxCallback;
 class IUpperMacContext;
 class Ieee80211Frame;
 class Ieee80211DataOrMgmtFrame;
@@ -46,12 +46,10 @@ class INET_API IUpperMac
 
         // from Rx:
         virtual void lowerFrameReceived(Ieee80211Frame *frame) = 0;
-        virtual void corruptedFrameReceived() = 0;
+        virtual void corruptedOrNotForUsFrameReceived() = 0;
 
         // from Tx:
-        virtual void channelAccessGranted(IContentionCallback *callback, int txIndex) = 0;
-        virtual void internalCollision(IContentionCallback *callback, int txIndex) = 0;
-        virtual void transmissionComplete(ITxCallback *callback) = 0;
+        virtual void transmissionComplete() = 0;
 };
 
 } // namespace ieee80211

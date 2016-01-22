@@ -14,43 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
 
-#ifndef __INET_IFRAMEEXCHANGE_H
-#define __INET_IFRAMEEXCHANGE_H
+#ifndef __INET_IMSDUAGGREGATION_H
+#define __INET_IMSDUAGGREGATION_H
 
 #include "inet/common/INETDefs.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 
 namespace inet {
 namespace ieee80211 {
 
-class Ieee80211Frame;
-
-/**
- * Abstract interface for frame exchange classes. Frame exchanges are a basic
- * building block of UpperMac (see IUpperMac), and coordinate frame sequences.
- */
-class INET_API IFrameExchange
+class INET_API IMsduAggregation
 {
     public:
-        class INET_API IFinishedCallback {
-            public:
-                virtual void frameExchangeFinished(IFrameExchange *what, bool successful) = 0;
-                virtual ~IFinishedCallback() {}
-        };
-
-        enum FrameProcessingResult { IGNORED, PROCESSED_DISCARD, PROCESSED_KEEP };
-
-    public:
-        virtual ~IFrameExchange() {}
-        virtual void start() = 0;
-        virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) = 0;
-        virtual void corruptedOrNotForUsFrameReceived() = 0;
+        virtual Ieee80211Frame *createAggregateFrame(cQueue *queue) = 0;
+        virtual std::vector<Ieee80211DataFrame *> explodeAggregateFrame(Ieee80211DataFrame *frame) = 0;
+        virtual ~IMsduAggregation() {}
 };
 
 } // namespace ieee80211
 } // namespace inet
 
 #endif
-

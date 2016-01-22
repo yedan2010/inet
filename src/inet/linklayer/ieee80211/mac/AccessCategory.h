@@ -34,7 +34,6 @@ enum AccessCategory
     AC_BE = 1,
     AC_VI = 2,
     AC_VO = 3,
-    AC_LEGACY,
     AC_NUMCATEGORIES
 };
 

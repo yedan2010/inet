@@ -30,6 +30,7 @@ class MACAddress;
 namespace ieee80211 {
 
 class Ieee80211Frame;
+class IContention;
 
 using namespace inet::physicallayer;  //TODO Khmm
 
@@ -46,6 +47,8 @@ using namespace inet::physicallayer;  //TODO Khmm
 class INET_API IRx
 {
     public:
+        virtual ~IRx() {}
+
         // from UpperMac
         virtual void setAddress(const MACAddress& address) = 0;
         virtual bool isReceptionInProgress() const = 0; // needed on ACK timeout
@@ -53,6 +56,9 @@ class INET_API IRx
         // from Contention
         virtual bool isMediumFree() const = 0;
         virtual void frameTransmitted(simtime_t durationField) = 0;
+
+        // from Coordination functions
+        virtual void registerContention(IContention *contention) = 0;
 
         // events
         virtual void receptionStateChanged(IRadio::ReceptionState state) = 0;

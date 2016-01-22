@@ -39,7 +39,7 @@ class INET_API Rx : public cSimpleModule, public IRx
 {
     protected:
         IUpperMac *upperMac = nullptr;
-        IContention **contention = nullptr; // nullptr-terminated pointer array
+        std::vector<IContention *> contentions;
         IStatistics *statistics = nullptr;
 
         MACAddress address;
@@ -69,6 +69,7 @@ class INET_API Rx : public cSimpleModule, public IRx
         virtual void receivedSignalPartChanged(IRadioSignal::SignalPart part) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void frameTransmitted(simtime_t durationField) override;
+        virtual void registerContention(IContention *contention) override;
 };
 
 } // namespace ieee80211
