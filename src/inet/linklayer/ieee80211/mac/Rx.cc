@@ -17,11 +17,13 @@
 // Author: Andras Varga
 //
 
-#include "Rx.h"
-#include "IContention.h"
-#include "ITx.h"
-#include "IUpperMac.h"
-#include "IStatistics.h"
+#include "inet/common/ModuleAccess.h"
+#include "inet/linklayer/ieee80211/mac/contract/IContention.h"
+#include "inet/linklayer/ieee80211/mac/contract/IStatistics.h"
+#include "inet/linklayer/ieee80211/mac/contract/ITx.h"
+#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
+#include "inet/linklayer/ieee80211/mac/Rx.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -37,17 +39,22 @@ Rx::~Rx()
     delete cancelEvent(endNavTimer);
 }
 
-void Rx::initialize()
+void Rx::initialize(int stage)
 {
-    upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
-    statistics = check_and_cast<IStatistics *>(getModuleByPath(par("statisticsModule")));
-    endNavTimer = new cMessage("NAV");
-    recomputeMediumFree();
-
-    WATCH(address);
-    WATCH(receptionState);
-    WATCH(transmissionState);
-    WATCH(mediumFree);
+    if (stage == INITSTAGE_LOCAL) {
+        auto mac = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this));
+        address = mac->getAddress();
+        upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
+        //    statistics = check_and_cast<IStatistics *>(getModuleByPath(par("statisticsModule")));
+        endNavTimer = new cMessage("NAV");
+        WATCH(address);
+        WATCH(receptionState);
+        WATCH(transmissionState);
+        WATCH(mediumFree);
+    }
+    else if (stage == INITSTAGE_LINK_LAYER) {
+        recomputeMediumFree();
+    }
 }
 
 void Rx::handleMessage(cMessage *msg)
@@ -71,7 +78,7 @@ void Rx::lowerFrameReceived(Ieee80211Frame *frame)
         // TODO: this is too early? when responding to an RTS we have to check the NAV before the RTS was received!
         if (frame->getReceiverAddress() != address)
             setOrExtendNav(frame->getDuration());
-        statistics->frameReceived(frame);
+//        statistics->frameReceived(frame);
         upperMac->lowerFrameReceived(frame);
     }
     else {
@@ -79,8 +86,7 @@ void Rx::lowerFrameReceived(Ieee80211Frame *frame)
         delete frame;
         for (auto contention : contentions)
             contention->corruptedFrameReceived();
-        upperMac->corruptedOrNotForUsFrameReceived();
-        statistics->erroneousFrameReceived();
+//        statistics->erroneousFrameReceived();
     }
 }
 
@@ -188,6 +194,7 @@ void Rx::updateDisplayString()
 
 void Rx::registerContention(IContention* contention)
 {
+    contention->mediumStateChanged(mediumFree);
     contentions.push_back(contention);
 }
 

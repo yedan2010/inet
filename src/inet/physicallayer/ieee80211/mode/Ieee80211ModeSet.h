@@ -25,7 +25,7 @@ namespace inet {
 
 namespace physicallayer {
 
-class INET_API Ieee80211ModeSet : public IPrintableObject
+class INET_API Ieee80211ModeSet : public IPrintableObject, public cObject
 {
   protected:
     class INET_API Entry

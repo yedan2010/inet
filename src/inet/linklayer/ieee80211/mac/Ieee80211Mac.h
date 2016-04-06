@@ -26,11 +26,12 @@
 #include <list>
 
 #include "inet/common/INETDefs.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
 #include "inet/linklayer/base/MACProtocolBase.h"
-#include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h" //TODO not needed here
+#include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
+#include "inet/linklayer/ieee80211/mac/contract/ITx.h"
+#include "inet/physicallayer/contract/packetlevel/IRadio.h"
 #include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h" //TODO not needed here
-#include "IMacRadioInterface.h"
+#include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h" //TODO not needed here
 
 namespace inet {
 namespace ieee80211 {
@@ -38,7 +39,6 @@ namespace ieee80211 {
 using namespace physicallayer;
 
 class IUpperMacContext;
-class ITx;
 class IContention;
 class IRx;
 class IUpperMac;
@@ -60,7 +60,7 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     ITx *tx = nullptr;
     IContention **contention = nullptr;  // nullptr-terminated pointer array
     IRadio *radio = nullptr;
-
+    const Ieee80211ModeSet *modeSet = nullptr;
     IRadio::TransmissionState transmissionState = IRadio::TransmissionState::TRANSMISSION_STATE_UNDEFINED;
 
     // The last change channel message received and not yet sent to the physical layer, or NULL.
@@ -77,7 +77,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     void configureRadioMode(IRadio::RadioMode radioMode);
     virtual InterfaceEntry *createInterfaceEntry() override;
     virtual const MACAddress& isInterfaceRegistered();
-    void transmissionStateChanged(IRadio::TransmissionState transmissionState);
 
     /** @brief Handle commands (msg kind+control info) coming from upper layers */
     virtual void handleUpperCommand(cMessage *msg) override;
@@ -103,6 +102,8 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     virtual void sendUp(cMessage *message) override;
     virtual void sendFrame(Ieee80211Frame *frameToSend) override;
     virtual void sendDownPendingRadioConfigMsg() override;
+
+    virtual void setAddressAndTransmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback);
 };
 
 } // namespace ieee80211

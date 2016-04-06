@@ -17,12 +17,12 @@
 // Author: Andras Varga
 //
 
-#include "Tx.h"
-#include "IUpperMac.h"
-#include "IMacRadioInterface.h"
-#include "IRx.h"
-#include "IStatistics.h"
-#include "Ieee80211Frame_m.h"
+#include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRx.h"
+#include "inet/linklayer/ieee80211/mac/contract/IStatistics.h"
+#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
+#include "inet/linklayer/ieee80211/mac/Tx.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -39,22 +39,23 @@ Tx::~Tx()
 void Tx::initialize()
 {
     mac = dynamic_cast<IMacRadioInterface *>(getModuleByPath(par("macModule")));
-    upperMac = dynamic_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
     rx = dynamic_cast<IRx *>(getModuleByPath(par("rxModule")));
-    statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
+//    statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
     endIfsTimer = new cMessage("endIFS");
 
     WATCH(transmitting);
     updateDisplayString();
 }
 
-void Tx::transmitFrame(Ieee80211Frame *frame)
+void Tx::transmitFrame(Ieee80211Frame *frame, ITx::ICallback *txCallback)
 {
-    transmitFrame(frame, SIMTIME_ZERO); //TODO make dedicated version, without the timer
+    transmitFrame(frame, SIMTIME_ZERO, txCallback); //TODO make dedicated version, without the timer
 }
 
-void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs)
+void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback)
 {
+    ASSERT(this->txCallback == nullptr);
+    this->txCallback = txCallback;
     Enter_Method("transmitFrame(\"%s\")", frame->getName());
     take(frame);
     this->frame = frame;
@@ -72,7 +73,10 @@ void Tx::radioTransmissionFinished()
         EV_DETAIL << "Tx: radioTransmissionFinished()\n";
         transmitting = false;
         frame = nullptr;
-        upperMac->transmissionComplete();
+        ASSERT(txCallback != nullptr);
+        ITx::ICallback *tmpTxCallback = txCallback;
+        txCallback = nullptr;
+        tmpTxCallback->transmissionComplete();
         rx->frameTransmitted(durationField);
         if (hasGUI())
             updateDisplayString();

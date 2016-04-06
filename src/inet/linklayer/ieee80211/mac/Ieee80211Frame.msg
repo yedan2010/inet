@@ -36,6 +36,8 @@ const unsigned int LENGTH_RTS = 160;    //bits
 const unsigned int LENGTH_CTS = 112;    //bits
 const unsigned int LENGTH_ACK = 112;    //bits
 const unsigned int LENGTH_MGMT = 28 * 8;    //bits
+const unsigned int LENGTH_ADDBAREQ = LENGTH_MGMT + 9*8; // mgmt length + action body length
+const unsigned int LENGTH_BASIC_BLOCKACK = (16 + 2 + (2 + 128) + 4) * 8; // header + ba control + ba information + fcs
 const unsigned int DATAFRAME_HEADER_MINLENGTH = 28 * 8;    //bits without QoS, without Address4, without SNAP: 2 + 2 + 3*6(addresses) + 2 + 4(crc)
 const unsigned int QOSCONTROL_BITS = 2 * 8;    // QoS Control field length (bits)
 const unsigned int SNAP_HEADER_BYTES = 8;
@@ -216,7 +218,7 @@ packet Ieee80211ManagementFrame extends Ieee80211DataOrMgmtFrame
 }
 
 // 8.3.3.13 Action frame format -- mgmt frame with subtype action
-packet Ieee80211ActionFrame extends Ieee80211DataOrMgmtFrame
+packet Ieee80211ActionFrame extends Ieee80211ManagementFrame
 {
     type = ST_ACTION;
     short category;
@@ -242,7 +244,7 @@ packet Ieee80211AMsdu
 //
 packet Ieee80211AddbaRequest extends Ieee80211ActionFrame
 {
-    // byteLength TODO
+    byteLength = LENGTH_ADDBAREQ / 8;
     category = 3; // representing Block Ack
     int blockAckAction = 0; // representing ADDBA request
     int dialogToken = 1; // nonzero, arbitrary
@@ -260,7 +262,9 @@ packet Ieee80211AddbaRequest extends Ieee80211ActionFrame
     simtime_t blockAckTimeoutValue;
 
     // Block Ack Starting Sequence Control
-    int _fragmentNumber; // FIXME: DataOrMgmtFreme has a fragmentNumber
+    // The Starting Sequence Number subfield of the Block Ack Starting Sequence Control subfield contains the sequence number of the first MSDU for which this Basic
+    // BlockAckReq frame is sent. The Fragment Number subfield is set to 0.
+    int _fragmentNumber = 0; // FIXME: DataOrMgmtFreme has a fragmentNumber
     int startingSequenceNumber; // the sequence number of the first MSDU
 
 }
@@ -347,6 +351,9 @@ packet Ieee80211BasicBlockAckReq extends Ieee80211BlockAckReq
 packet Ieee80211CompressedBlockAckReq extends Ieee80211BlockAckReq
 {
     // byteLength TODO
+
+    int tidInfo; // The TID_INFO subfield of the BAR Control field of the Compressed BlockAckReq frame contains the TID for which a BlockAck frame is requested.
+
     // The RA field of the BlockAck frame is the address of the recipient STA that requested the Block Ack.
     // The TA field is the address of the STA transmitting the BlockAck frame.
     type = ST_BLOCKACK_REQ;

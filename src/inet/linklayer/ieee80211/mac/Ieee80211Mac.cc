@@ -20,18 +20,17 @@
 #include <algorithm>
 
 
-#include "Ieee80211Mac.h"
-#include "inet/networklayer/contract/IInterfaceTable.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#include "inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
-#include "IUpperMac.h"
-#include "IRx.h"
-#include "ITx.h"
-#include "IContention.h"
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
-
-#include "inet/linklayer/ieee80211/mac/IFrameSequence.h"
+#include "inet/linklayer/ieee80211/mac/contract/IContention.h"
+#include "inet/linklayer/ieee80211/mac/contract/IFrameSequence.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRx.h"
+#include "inet/linklayer/ieee80211/mac/contract/ITx.h"
+#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
+#include "inet/networklayer/contract/IInterfaceTable.h"
+#include "inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -67,9 +66,9 @@ void Ieee80211Mac::initialize(int stage)
         radioModule->subscribe(IRadio::receivedSignalPartChangedSignal, this);
         radio = check_and_cast<IRadio *>(radioModule);
 
-        upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
-        rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
-        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
+        upperMac = check_and_cast<IUpperMac *>(getSubmodule("upperMac"));
+        rx = check_and_cast<IRx *>(getSubmodule("rx"));
+        tx = check_and_cast<ITx *>(getSubmodule("tx"));
 
         const char *addressString = par("address");
         if (!strcmp(addressString, "auto")) {
@@ -78,10 +77,12 @@ void Ieee80211Mac::initialize(int stage)
             addressString = par("address");
         }
         address.setAddress(addressString);
+        modeSet = Ieee80211ModeSet::getModeSet(par("modeSet").stringValue());
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         // interface
         registerInterface();
+        emit(NF_MODESET_CHANGED, modeSet);
 
         if (isOperational)
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
@@ -169,6 +170,7 @@ void Ieee80211Mac::handleUpperCommand(cMessage *msg)
             sendDown(msg);
         }
         else {
+            // TODO: waiting potentially indefinitely?! wtf?!
             EV_DEBUG << "Delaying " << msg->getName() << " until next IDLE or DEFER state\n";
             pendingRadioConfigMsg = msg;
         }
@@ -235,6 +237,21 @@ void Ieee80211Mac::sendDownPendingRadioConfigMsg()
         pendingRadioConfigMsg = NULL;
     }
 }
+
+// TODO: revise this
+void Ieee80211Mac::setAddressAndTransmitFrame(Ieee80211Frame* frame, simtime_t ifs, ITx::ICallback* txCallback)
+{
+    if (auto twoAddrFrame = dynamic_cast<Ieee80211TwoAddressFrame*>(frame)) {
+        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(twoAddrFrame);
+        frameToTransmit->setTransmitterAddress(address);
+        tx->transmitFrame(frameToTransmit, ifs, txCallback);
+    }
+    else {
+        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(frame);
+        tx->transmitFrame(frameToTransmit, ifs, txCallback);
+    }
+}
+
 
 // FIXME
 bool Ieee80211Mac::handleNodeStart(IDoneCallback *doneCallback)

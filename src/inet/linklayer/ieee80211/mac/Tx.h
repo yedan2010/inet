@@ -20,7 +20,7 @@
 #ifndef __INET_TX_H
 #define __INET_TX_H
 
-#include "ITx.h"
+#include "inet/linklayer/ieee80211/mac/contract/ITx.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -36,8 +36,8 @@ class IStatistics;
 class INET_API Tx : public cSimpleModule, public ITx
 {
     protected:
+        ITx::ICallback *txCallback = nullptr;
         IMacRadioInterface *mac;
-        IUpperMac *upperMac;
         IRx *rx;
         IStatistics *statistics;
         Ieee80211Frame *frame = nullptr;
@@ -54,8 +54,8 @@ class INET_API Tx : public cSimpleModule, public ITx
         Tx() {}
         ~Tx();
 
-        virtual void transmitFrame(Ieee80211Frame *frame) override;
-        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) override;
+        virtual void transmitFrame(Ieee80211Frame *frame, ITx::ICallback *txCallback) override;
+        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback) override;
         virtual void radioTransmissionFinished() override;
 };
 

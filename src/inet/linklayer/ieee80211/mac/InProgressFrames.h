@@ -18,10 +18,10 @@
 #ifndef __INET_INPROGRESSFRAMES_H
 #define __INET_INPROGRESSFRAMES_H
 
-#include "inet/linklayer/ieee80211/mac/AckHandler.h"
-#include "inet/linklayer/ieee80211/mac/FrameExtractor.h"
+#include "inet/linklayer/ieee80211/mac/contract/IOriginatorMacDataService.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Queue.h"
+#include "inet/linklayer/ieee80211/mac/originator/AckHandler.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -32,15 +32,15 @@ class INET_API InProgressFrames
         class SequenceControlPredicate
         {
             private:
-                const std::set<std::pair<uint16_t, uint8_t>>& seqAndFragNums;
+                const std::set<SequenceControlField>& seqAndFragNums;
                 std::vector<const Ieee80211DataOrMgmtFrame *> framesToDelete;
 
             public:
-                SequenceControlPredicate(const std::set<std::pair<uint16_t, uint8_t>>& seqAndFragNums) :
+                SequenceControlPredicate(const std::set<SequenceControlField>& seqAndFragNums) :
                     seqAndFragNums(seqAndFragNums) {}
 
                 bool operator() (const Ieee80211DataOrMgmtFrame *frame) {
-                    bool ok = seqAndFragNums.count(std::make_pair(frame->getSequenceNumber(), frame->getFragmentNumber())) != 0;
+                    bool ok = seqAndFragNums.count(SequenceControlField(frame->getSequenceNumber(), frame->getFragmentNumber())) != 0;
                     if (ok) framesToDelete.push_back(frame);
                     return ok;
                 }
@@ -48,27 +48,30 @@ class INET_API InProgressFrames
         };
 
     protected:
-        FrameExtractor *extractor = nullptr;
         PendingQueue *pendingQueue = nullptr;
+        IOriginatorMacDataService *dataService = nullptr;
         AckHandler *ackHandler = nullptr;
-        ITransmitLifetimeHandler *transmitLifetimeHandler = nullptr;
         std::list<Ieee80211DataOrMgmtFrame *> inProgressFrames;
 
     protected:
-        void ensureFilled();
+        void ensureHasFrameToTransmit();
         bool isEligibleStatusToTransmit(AckHandler::Status status);
+        bool hasEligibleFrameToTransmit();
 
     public:
-        InProgressFrames(FrameExtractor *extractor, PendingQueue *pendingQueue, AckHandler *ackHandler, ITransmitLifetimeHandler *transmitLifetimeHandler) :
-            extractor(extractor), pendingQueue(pendingQueue), ackHandler(ackHandler), transmitLifetimeHandler(transmitLifetimeHandler) { }
+        InProgressFrames(PendingQueue *pendingQueue, IOriginatorMacDataService *dataService, AckHandler *ackHandler) :
+            pendingQueue(pendingQueue),
+            dataService(dataService),
+            ackHandler(ackHandler)
+        { }
 
         virtual Ieee80211DataOrMgmtFrame *getFrameToTransmit();
         virtual void dropAndDeleteFrame(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame);
         virtual void dropAndDeleteFrame(int seqNum, int fragNum);
-        virtual void dropAndDeleteFrames(std::set<std::pair<uint16_t, uint8_t>> seqAndFragNums);
+        virtual void dropAndDeleteFrames(std::set<SequenceControlField> seqAndFragNums);
 
-        virtual bool hasInProgressFrames() { return inProgressFrames.empty(); }
-        virtual bool hasPendingFrames() { return pendingQueue->isEmpty(); }
+        virtual bool hasInProgressFrames() { ensureHasFrameToTransmit(); return hasEligibleFrameToTransmit(); }
+        virtual std::vector<Ieee80211DataFrame*> getOutstandingFrames();
 };
 
 } /* namespace ieee80211 */

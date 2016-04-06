@@ -26,48 +26,51 @@ Ieee80211Queue::Ieee80211Queue(int maxQueueSize, const char *name) :
     this->maxQueueSize = maxQueueSize;
 }
 
-void Ieee80211Queue::insert(Ieee80211Frame *frame)
+bool Ieee80211Queue::insert(Ieee80211DataOrMgmtFrame *frame)
 {
     if (getLength() == maxQueueSize)
-        throw cRuntimeError("The queue is full");
+        return false;
     cQueue::insert(frame);
+    return true;
 }
 
-void Ieee80211Queue::insertBefore(Ieee80211Frame *where, Ieee80211Frame *frame)
+bool Ieee80211Queue::insertBefore(Ieee80211DataOrMgmtFrame *where, Ieee80211DataOrMgmtFrame *frame)
 {
     if (getLength() == maxQueueSize)
-        throw cRuntimeError("The queue is full");
+        return false;
     cQueue::insertBefore(where, frame);
+    return true;
 }
 
-void Ieee80211Queue::insertAfter(Ieee80211Frame *where, Ieee80211Frame *frame)
+bool Ieee80211Queue::insertAfter(Ieee80211DataOrMgmtFrame *where, Ieee80211DataOrMgmtFrame *frame)
 {
     if (getLength() == maxQueueSize)
-        throw cRuntimeError("The queue is full");
+        return false;
     cQueue::insertAfter(where, frame);
+    return true;
 }
 
-Ieee80211Frame *Ieee80211Queue::remove(Ieee80211Frame *frame)
+Ieee80211DataOrMgmtFrame *Ieee80211Queue::remove(Ieee80211DataOrMgmtFrame *frame)
 {
-    return check_and_cast<Ieee80211Frame *>(cQueue::remove(frame));
+    return check_and_cast<Ieee80211DataOrMgmtFrame *>(cQueue::remove(frame));
 }
 
-Ieee80211Frame *Ieee80211Queue::pop()
+Ieee80211DataOrMgmtFrame *Ieee80211Queue::pop()
 {
-    return check_and_cast<Ieee80211Frame *>(cQueue::pop());
+    return check_and_cast<Ieee80211DataOrMgmtFrame *>(cQueue::pop());
 }
 
-Ieee80211Frame *Ieee80211Queue::front() const
+Ieee80211DataOrMgmtFrame *Ieee80211Queue::front() const
 {
-    return check_and_cast<Ieee80211Frame *>(cQueue::front());
+    return check_and_cast<Ieee80211DataOrMgmtFrame *>(cQueue::front());
 }
 
-Ieee80211Frame *Ieee80211Queue::back() const
+Ieee80211DataOrMgmtFrame *Ieee80211Queue::back() const
 {
-    return check_and_cast<Ieee80211Frame *>(cQueue::back());
+    return check_and_cast<Ieee80211DataOrMgmtFrame *>(cQueue::back());
 }
 
-bool Ieee80211Queue::contains(Ieee80211Frame *frame) const
+bool Ieee80211Queue::contains(Ieee80211DataOrMgmtFrame *frame) const
 {
     return cQueue::contains(frame);
 }
@@ -101,33 +104,6 @@ int PendingQueue::cmpMgmtOverMulticastOverUnicast(Ieee80211DataOrMgmtFrame *a, I
     int aPri = dynamic_cast<Ieee80211ManagementFrame*>(a) ? 2 : a->getReceiverAddress().isMulticast() ? 1 : 0;
     int bPri = dynamic_cast<Ieee80211ManagementFrame*>(a) ? 2 : b->getReceiverAddress().isMulticast() ? 1 : 0;
     return bPri - aPri;
-}
-
-InProgressQueue::InProgressQueue(FrameExtractor *extractor, int maxQueueSize, const char *name) :
-    Ieee80211Queue(maxQueueSize, name),
-    extractor(extractor)
-{
-}
-
-void InProgressQueue::ensureFilled()
-{
-    if (isEmpty()) {
-        auto frames = extractor->extractFramesToTransmit(this);
-        for (auto frame : frames)
-            insert(frame);
-    }
-}
-
-Ieee80211Frame *InProgressQueue::pop()
-{
-    ensureFilled();
-    return Ieee80211Queue::pop();
-}
-
-Ieee80211Frame *InProgressQueue::front() const
-{
-    const_cast<InProgressQueue *>(this)->ensureFilled();
-    return Ieee80211Queue::front();
 }
 
 } /* namespace inet */

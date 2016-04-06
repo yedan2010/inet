@@ -28,6 +28,8 @@ namespace inet {
 
 namespace physicallayer {
 
+Register_Abstract_Class(Ieee80211ModeSet);
+
 const DelayedInitializer<std::vector<Ieee80211ModeSet>> Ieee80211ModeSet::modeSets([]() { return new std::vector<Ieee80211ModeSet> {
     Ieee80211ModeSet("a", {
         { true, &Ieee80211OFDMCompliantModes::ofdmMode6MbpsCS20MHz },

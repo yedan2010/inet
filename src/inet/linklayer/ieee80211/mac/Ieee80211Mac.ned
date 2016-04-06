@@ -20,6 +20,12 @@
 package inet.linklayer.ieee80211.mac;
 
 import inet.linklayer.ieee80211.IIeee80211Mac;
+import inet.linklayer.ieee80211.mac.contract.IRateControl;
+import inet.linklayer.ieee80211.mac.contract.IRateSelection;
+import inet.linklayer.ieee80211.mac.contract.IRx;
+import inet.linklayer.ieee80211.mac.contract.IStatistics;
+import inet.linklayer.ieee80211.mac.contract.ITx;
+import inet.linklayer.ieee80211.mac.contract.IUpperMac;
 
 // near copy-paste of inet.linklayer.base.MACProtocolBase to work around "compound-module cannot extend a simple-module" error in OMNeT++ 4.x
 module LayeredProtocolBase
@@ -70,8 +76,8 @@ module MACProtocolBase extends LayeredProtocolBase
 //
 // <b>Limitations</b>
 //
-// The following features not supported: 1) fragmentation, 2) power management,
-// 3) polling (PCF). Physical layer algorithms such as frequency hopping and
+// The following features not supported: 1) power management, 2) polling (PCF).
+// Physical layer algorithms such as frequency hopping and
 // direct sequence spread spectrum are not modelled directly.
 //
 // Fields related to the above unsupported features are omitted from
@@ -87,58 +93,49 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
                                           // "auto". "auto" values will be replaced by
                                           // a generated MAC address in init stage 0.
         string rateControlModuleType = default("");
-        string aMsduAggregatorModuleType = default("");
-        string upperMacModuleType = default("TheUpperMac"); // TODO
-
-        string upperMacModule = ".upperMac";
-        string rxModule = ".rx";
-        string txModule = ".tx";
-        int numContention = default(5);
-        string rateSelectionModule = ".rateSelection";
-        string rateControlModule = ".rateControl";
-        string statisticsModule = ".statistics";
-        string msduAggregatorModule = ".msduAggregator";
+        string modeSet @enum("a","b","g","n","p") = default("g");
 
         *.macModule = "^";
-        *.upperMacModule = "^" + upperMacModule;
-        *.rxModule = "^" + rxModule;
-        *.txModule = "^" + txModule;
-        *.rateSelectionModule = "^" + rateSelectionModule;
-        *.rateControlModule = "^" + rateControlModule;
-        *.statisticsModule = "^" + statisticsModule;
-        *.msduAggregatorModule = "^" + msduAggregatorModule;
+        *.upperMacModule = "^.upperMac";
+        *.rxModule = "^.rx";
+        *.txModule = "^.tx";
+        *.rateSelectionModule = "^.rateSelection";
+        *.rateControlModule = "^.rateControl";
+        *.statisticsModule = "^.statistics";
 
-        @display("i=block/layer;bgb=721,355");
+        @display("i=block/layer");
+        @nic;
         @class(Ieee80211Mac);
         @statistic[passedUpPk](title="packets passed to higher layer"; source=packetSentToUpper; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         @statistic[sentDownPk](title="packets sent to lower layer"; source=packetSentToLower; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         @statistic[rcvdPkFromHL](title="packets received from higher layer"; source=packetReceivedFromUpper; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         @statistic[rcvdPkFromLL](title="packets received from lower layer"; source=packetReceivedFromLower; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
-
+        
+        @signal[NF_MODESET_CHANGED](type=inet::physicallayer::Ieee80211ModeSet);
     submodules:
-        msduAggregator: <aMsduAggregatorModuleType> like IMsduAggregation if aMsduAggregatorModuleType != "" {
-            @display("p=49,155");
-        }
         rateSelection: <default("BasicRateSelection")> like IRateSelection {
-            @display("p=492,66");
+            parameters:
+                @display("p=100,300");
         }
         rateControl: <rateControlModuleType> like IRateControl if rateControlModuleType != "" {
-            @display("p=581,66");
+            parameters:
+                @display("p=100,400");
         }
         statistics: <default("BasicStatistics")> like IStatistics {
-            @display("p=49,66");
+            parameters:
+                @display("p=100,500");
         }
-        upperMac: <upperMacModuleType> like IUpperMac {
-            @display("p=227,88");
+        upperMac: <default("UpperMac")> like IUpperMac {
+            parameters:
+                @display("p=300,100");
+        }
+        rx: <default("Rx")> like IRx {
+            parameters:
+                @display("p=300,400");
         }
         tx: <default("Tx")> like ITx {
-            @display("p=198,260");
-        }
-//        ctn[numContention]: <default("Contention")> like IContention {
-//            @display("p=295,260,r,60");
-//        }
-        rx: <default("Rx")> like IRx {
-            @display("p=112,260");
+            parameters:
+                @display("p=400,400");
         }
 }
 
@@ -171,13 +168,10 @@ module Ieee80211CompatibleMac extends Ieee80211Mac
         double slotTime @unit("s") = default(-1s); // slot time, -1 means default (mode dependent)
         int cwMinData = default(-1); // contention window for normal data frames, -1 means default
         int cwMaxData = default(-1); // contention window for normal data frames, -1 means default
-        int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
         //upperMac.typename = EDCA ? "EdcaUpperMac" : "DcfUpperMac";
-        upperMac.typename = "TheDcf";
-        numContention = EDCA ? 5 : 1;
 
-        rateSelection.modeSet = opMode; // BasicRateSelection
+//        rateSelection.modeSet = opMode; // BasicRateSelection
         rateSelection.dataBitrate = bitrate; // BasicRateSelection
         rateSelection.multicastBitrate = basicBitrate;
         rateSelection.controlBitrate = controlBitrate;

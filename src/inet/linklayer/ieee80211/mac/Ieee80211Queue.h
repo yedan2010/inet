@@ -20,7 +20,6 @@
 
 #include "inet/common/INETDefs.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#include "inet/linklayer/ieee80211/mac/FrameExtractor.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -33,17 +32,17 @@ class INET_API Ieee80211Queue : public cQueue
     public:
         Ieee80211Queue(int maxQueueSize, const char *name);
 
-        virtual void insert(Ieee80211Frame *frame);
-        virtual void insertBefore(Ieee80211Frame *where, Ieee80211Frame *frame);
-        virtual void insertAfter(Ieee80211Frame *where, Ieee80211Frame *frame);
+        virtual bool insert(Ieee80211DataOrMgmtFrame *frame);
+        virtual bool insertBefore(Ieee80211DataOrMgmtFrame *where, Ieee80211DataOrMgmtFrame *frame);
+        virtual bool insertAfter(Ieee80211DataOrMgmtFrame *where, Ieee80211DataOrMgmtFrame *frame);
 
-        virtual Ieee80211Frame *remove(Ieee80211Frame *frame);
-        virtual Ieee80211Frame *pop();
+        virtual Ieee80211DataOrMgmtFrame *remove(Ieee80211DataOrMgmtFrame *frame);
+        virtual Ieee80211DataOrMgmtFrame *pop();
 
-        virtual Ieee80211Frame *front() const;
-        virtual Ieee80211Frame *back() const;
+        virtual Ieee80211DataOrMgmtFrame *front() const;
+        virtual Ieee80211DataOrMgmtFrame *back() const;
 
-        virtual bool contains(Ieee80211Frame *frame) const;
+        virtual bool contains(Ieee80211DataOrMgmtFrame *frame) const;
 
         int getNumberOfFrames() { return getLength(); }
         int getMaxQueueSize() { return maxQueueSize; }
@@ -64,20 +63,6 @@ class PendingQueue : public Ieee80211Queue {
     public:
         static int cmpMgmtOverData(Ieee80211DataOrMgmtFrame *a, Ieee80211DataOrMgmtFrame *b);
         static int cmpMgmtOverMulticastOverUnicast(Ieee80211DataOrMgmtFrame *a, Ieee80211DataOrMgmtFrame *b);
-};
-
-class InProgressQueue : public Ieee80211Queue {
-    protected:
-        FrameExtractor *extractor = nullptr;
-
-    protected:
-        void ensureFilled();
-
-    public:
-        InProgressQueue(FrameExtractor *extractor, int maxQueueSize, const char *name);
-
-        virtual Ieee80211Frame *pop();
-        virtual Ieee80211Frame *front() const;
 };
 
 } /* namespace ieee80211 */

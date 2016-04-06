@@ -25,17 +25,17 @@
 // un-comment this if you do not want to log state machine transitions
 //#define FSM_DEBUG
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/FSMA.h"
+#include "inet/common/INETDefs.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/lifecycle/ILifecycle.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
-#include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
-#include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h"
 #include "inet/linklayer/base/MACProtocolBase.h"
+#include "inet/linklayer/ieee80211/mac/common/AccessCategory.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/oldmac/Ieee80211Consts.h"
-#include "inet/linklayer/ieee80211/mac/AccessCategory.h"
+#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h"
+#include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
 
 namespace inet {
 

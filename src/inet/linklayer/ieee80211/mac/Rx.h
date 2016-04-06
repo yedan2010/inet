@@ -20,9 +20,9 @@
 #ifndef __INET_RX_H
 #define __INET_RX_H
 
-#include "IRx.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRx.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/physicallayer/contract/packetlevel/IRadio.h"
-#include "Ieee80211Frame_m.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -50,7 +50,8 @@ class INET_API Rx : public cSimpleModule, public IRx
         bool mediumFree = true;  // cached state
 
     protected:
-        virtual void initialize() override;
+        virtual int numInitStages() const override { return NUM_INIT_STAGES; }
+        virtual void initialize(int stage) override;
         virtual void handleMessage(cMessage *msg) override;
         virtual void setOrExtendNav(simtime_t navInterval);
         virtual bool isFcsOk(Ieee80211Frame *frame) const;

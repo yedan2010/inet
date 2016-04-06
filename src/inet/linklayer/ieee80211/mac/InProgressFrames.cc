@@ -20,27 +20,42 @@
 namespace inet {
 namespace ieee80211 {
 
-void InProgressFrames::ensureFilled()
+bool InProgressFrames::hasEligibleFrameToTransmit()
+{
+    for (auto frame : inProgressFrames) {
+        AckHandler::Status ackStatus = ackHandler->getAckStatus(frame);
+        if (isEligibleStatusToTransmit(ackStatus))
+            return true;
+    }
+    return false;
+}
+
+void InProgressFrames::ensureHasFrameToTransmit()
 {
 //    TODO: delete old frames from inProgressFrames
 //    if (auto dataFrame = dynamic_cast<Ieee80211DataFrame*>(frame)) {
 //        if (transmitLifetimeHandler->isLifetimeExpired(dataFrame))
 //            return frame;
 //    }
-    if (inProgressFrames.empty()) { // TODO: this condition is not appropriate <-> hasEligibleFrames() or something
-        auto frames = extractor->extractFramesToTransmit(pendingQueue);
-        for (auto frame : frames)
-            inProgressFrames.push_back(frame);
+    if (!hasEligibleFrameToTransmit()) {
+        auto frames = dataService->extractFramesToTransmit(pendingQueue);
+        if (frames) {
+            for (auto frame : *frames) {
+                ackHandler->frameGotInProgress(frame);
+                inProgressFrames.push_back(frame);
+            }
+            delete frames;
+        }
     }
 }
 bool InProgressFrames::isEligibleStatusToTransmit(AckHandler::Status status)
 {
-    return status == AckHandler::Status::ARRIVED_UNACKED || status == AckHandler::Status::NOT_ARRIVED_IN_TIME || status == AckHandler::Status::UNKNOWN;
+    return status == AckHandler::Status::BLOCK_ACK_ARRIVED_UNACKED || status == AckHandler::Status::NORMAL_ACK_NOT_ARRIVED || status == AckHandler::Status::FRAME_NOT_YET_TRANSMITTED;
 }
 
 Ieee80211DataOrMgmtFrame *InProgressFrames::getFrameToTransmit()
 {
-    ensureFilled();
+    ensureHasFrameToTransmit();
     for (auto frame : inProgressFrames) {
         AckHandler::Status ackStatus = ackHandler->getAckStatus(frame);
         if (isEligibleStatusToTransmit(ackStatus))
@@ -55,8 +70,8 @@ void InProgressFrames::dropAndDeleteFrame(int seqNum, int fragNum)
         Ieee80211DataOrMgmtFrame *frame = *it;
         if (frame->getSequenceNumber() == seqNum && frame->getFragmentNumber() == fragNum) {
             inProgressFrames.erase(it);
-            delete frame;
-            break;
+            // delete frame; // FIXME
+            return;
         }
     }
 }
@@ -64,16 +79,27 @@ void InProgressFrames::dropAndDeleteFrame(int seqNum, int fragNum)
 void InProgressFrames::dropAndDeleteFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     inProgressFrames.remove(frame);
-    delete frame;
+    // delete frame; FIXME: txop, abortFrameSequence
 }
 
-void InProgressFrames::dropAndDeleteFrames(std::set<std::pair<uint16_t, uint8_t>> seqAndFragNums)
+void InProgressFrames::dropAndDeleteFrames(std::set<SequenceControlField> seqAndFragNums)
 {
     SequenceControlPredicate predicate(seqAndFragNums);
     inProgressFrames.remove_if(predicate);
     const std::vector<const Ieee80211DataOrMgmtFrame *>& framesToDelete = predicate.getFramesToDelete();
-    for (auto frame : framesToDelete)
-        delete frame;
+//    for (auto frame : framesToDelete)
+//        delete frame; // FIXME
+}
+
+std::vector<Ieee80211DataFrame*> InProgressFrames::getOutstandingFrames()
+{
+    std::vector<Ieee80211DataFrame*> outstandingFrames;
+    for (auto frame : inProgressFrames) {
+        auto dataFrame = dynamic_cast<Ieee80211DataFrame *>(frame);
+        if (dataFrame && ackHandler->getAckStatus(dataFrame) == AckHandler::Status::BLOCK_ACK_NOT_YET_REQUESTED)
+            outstandingFrames.push_back(dataFrame);
+    }
+    return outstandingFrames;
 }
 
 } /* namespace ieee80211 */
