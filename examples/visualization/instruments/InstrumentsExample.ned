@@ -5,6 +5,7 @@
 package inet.examples.visualization.instruments;
 
 import inet.common.misc.SignalSource;
+import inet.common.figures.DelegateSignalConfigurator;
 
 
 network InstrumentsExample
@@ -36,11 +37,17 @@ network InstrumentsExample
         @figure[image](type=indexedImage; pos=220,65; size=16,16; images=status/off,status/green,status/red);
         @statistic[image](source=signalSourceOutput; record=figure; targetFigure=image); // note: indexedImage takes the value modulo the number of images
 
+        @figure[plot](type=plot; pos=400,270; size=200,100; minValue=-10; maxValue=10; tickSize=5; timeWindow=5.5);
+        @statistic[plot](source=signalSourceOutput; record=figure; targetFigure=plot);
+
         signalSource.value = default(dropUnit(simTime()));
 
     submodules:
         signalSource: SignalSource {
             @display("p=50,350;is=s");
+        }
+        figureHelper: DelegateSignalConfigurator {
+            @display("p=180,350");
         }
 }
 
@@ -56,5 +63,5 @@ network InstrumentsExample2 extends InstrumentsExample
         @figure[thermometer](mercuryColor=firebrick; initialValue=0; minValue=-10; maxValue=10; tickSize=2; label="some label"; labelFont="Arial,10pt,italic"; labelColor="grey");
         @figure[image](images=trafficlight_off,trafficlight_red,trafficlight_yellow,trafficlight_green,trafficlight_redyellow; initialValue=9; size=-,-; opacity=0.8; tintColor=yellow; tintAmount=0.1; labelOffset=1, 35; label="some label"; labelFont="Arial,10pt,italic"; labelColor="grey");
 
-        signalSource.value = 12*sin(0.05 * dropUnit(simTime()));
+        signalSource.value = normal(0, 10);//12*sin(0.05 * dropUnit(simTime()));
 }
