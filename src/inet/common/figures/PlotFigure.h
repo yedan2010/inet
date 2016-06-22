@@ -52,6 +52,8 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
     Rectangle bounds;
 
   protected:
+    void redrawYTicks();
+    void redrawXTicks();
     void addChildren();
     void layout();
     void refresh();

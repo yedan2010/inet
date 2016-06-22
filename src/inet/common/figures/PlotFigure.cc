@@ -162,6 +162,8 @@ void PlotFigure::parse(cProperty *property) {
        setMinValue(atof(s));
     if ((s = property->getValue(PKEY_MAX_VALUE)) != nullptr)
        setMaxValue(atof(s));
+
+    refresh();
 }
 
 const char **PlotFigure::getAllowedPropertyKeys() const
@@ -207,9 +209,13 @@ void PlotFigure::layout()
     axisX->setStart(Point(bounds.x, bounds.y + bounds.height));
     axisX->setEnd(Point(bounds.x + bounds.width, bounds.y + bounds.height));
 
+    redrawYTicks();
+}
+
+void PlotFigure::redrawYTicks()
+{
     int numTicks = std::abs(max - min) / tickSize + 1;
 
-    // TODO move to redrawTicks
     // Allocate ticks and numbers if needed
     if(numTicks > ticksY.size())
         while(numTicks > ticksY.size())
@@ -220,8 +226,8 @@ void PlotFigure::layout()
             number->setAnchor(ANCHOR_W);
             number->setFont(Font("", bounds.height * NUMBER_SIZE_PERCENT));
 
-            addFigure(tick);
-            addFigure(number);
+            addFigureBelow(tick, plotFigure);
+            addFigureBelow(number, plotFigure);
             ticksY.push_back(Tick(tick, number));
         }
     else
@@ -232,12 +238,13 @@ void PlotFigure::layout()
             delete removeFigure(ticksY[i].tick);
             ticksY.pop_back();
         }
-    // -- move to redrawTicks
 
     for(int i = 0; i < ticksY.size(); ++i)
     {
-        ticksY[i].tick->setStart(Point(bounds.x + bounds.width, bounds.y + bounds.height - bounds.height*(i*tickSize)/std::abs(max-min)));
-        ticksY[i].tick->setEnd(Point(bounds.x + bounds.width - TICK_LENGTH, bounds.y + bounds.height - bounds.height*(i*tickSize)/std::abs(max-min)));
+        double x = bounds.x + bounds.width;
+        double y = bounds.y + bounds.height - bounds.height*(i*tickSize)/std::abs(max-min);
+        ticksY[i].tick->setStart(Point(x, y));
+        ticksY[i].tick->setEnd(Point(x - TICK_LENGTH, y));
 
         char buf[32];
         sprintf(buf, "%g", min + i*tickSize);
@@ -251,29 +258,88 @@ void PlotFigure::refreshDisplay()
     refresh();
 }
 
+void PlotFigure::redrawXTicks()
+{
+    simtime_t minX = simTime() - timeWindow;
+
+    double fraction = std::abs(fmod((minX / timeTickSize).dbl(), 1));
+    double shifting;
+
+    if(fraction < std::numeric_limits<double>::epsilon())
+        shifting = 0;
+    else
+        shifting = timeTickSize*(1 - fraction);
+
+    int numTimeTicks = (timeWindow - shifting) / timeTickSize + 1;
+
+    // Allocate ticks and numbers if needed
+    if(numTimeTicks > ticksX.size())
+        while(numTimeTicks > ticksX.size())
+        {
+            cLineFigure *tick = new cLineFigure();
+            cTextFigure *number = new cTextFigure();
+
+            number->setAnchor(ANCHOR_N);
+            number->setFont(Font("", bounds.height * NUMBER_SIZE_PERCENT));
+
+            addFigureBelow(tick, plotFigure);
+            addFigureBelow(number, plotFigure);
+            ticksX.push_back(Tick(tick, number));
+        }
+    else
+        // Add or remove figures from canvas according to previous number of ticks
+        for(int i = ticksX.size() - 1; i >= numTimeTicks; --i)
+        {
+            delete removeFigure(ticksX[i].number);
+            delete removeFigure(ticksX[i].tick);
+            ticksX.pop_back();
+        }
+
+    for(int i = 0; i < ticksX.size(); ++i)
+    {
+        double x = bounds.x + bounds.width*(i*timeTickSize + shifting)/std::abs(timeWindow);
+        double y = bounds.y + bounds.height;
+        ticksX[i].tick->setStart(Point(x, y));
+        ticksX[i].tick->setEnd(Point(x, y - TICK_LENGTH));
+
+        // TODO not works with negative numbers
+        char buf[32];
+        sprintf(buf, "%g", minX.dbl() + i*timeTickSize + shifting);
+        ticksX[i].number->setText(buf);
+        ticksX[i].number->setPosition(Point(x, y + bounds.height * NUMBER_DISTANCE_FROM_TICK));
+     }
+}
+
 void PlotFigure::refresh()
 {
-    // TODO ticksX, tick X number;
+    // TODO tick X number;
+
+    // ticksX
+    redrawXTicks();
 
     // plot
     simtime_t minX = simTime() - timeWindow;
-    simtime_t maxX = simTime() ;
+    simtime_t maxX = simTime();
 
     plotFigure->clearPath();
 
-    if(values.size() < 2 || minX > values.front())
+    if(values.size() < 2)
         return;
+    if(minX > values.front().first)
+    {
+        values.clear();
+        return;
+    }
 
-    // TODO rethink
     auto r = getBounds();
     auto it = values.begin();
-    double startX = r.x + r.width - (maxX - it->first).dbl() / (maxX - minX).dbl() * r.width;
+    double startX = r.x + r.width - (maxX - it->first).dbl() / timeWindow * r.width;
     double startY = r.y + (max - it->second) / std::abs(max - min) * r.height;
     plotFigure->addMoveTo(startX, startY);
 
     ++it;
     do {
-        double endX = r.x + r.width - (maxX - it->first).dbl() / (maxX - minX).dbl() * r.width;
+        double endX = r.x + r.width - (maxX - it->first).dbl() / timeWindow * r.width;
         double endY = r.y + (max - it->second) / std::abs(max - min) * r.height;
 
         double originalStartX = startX;
