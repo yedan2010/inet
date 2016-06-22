@@ -32,28 +32,29 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
     struct Tick
     {
         cLineFigure *tick;
+        cLineFigure *dashLine;
         cTextFigure *number;
 
-        Tick(cLineFigure *tick, cTextFigure *number) : tick(tick), number(number) {}
+        Tick(cLineFigure *tick, cLineFigure *dashLine, cTextFigure *number) :
+            tick(tick), dashLine(dashLine), number(number) {}
     };
 
     cPathFigure *plotFigure;
     cLabelFigure *labelFigure;
-    cLineFigure *axisX, *axisY;
-    std::vector<Tick> ticksX;
-    std::vector<Tick> ticksY;
+    cRectangleFigure *backgroundFigure;
+    std::vector<Tick> timeTicks;
+    std::vector<Tick> valueTicks;
 
-    double timeWindow = 10;
-    double tickSize = 2.5;
-    double timeTickSize = 3;
+    simtime_t timeWindow = 10;
+    double valueTickSize = 2.5;
+    simtime_t timeTickSize = 3;
     double min = 0;
     double max = 10;
     std::list<std::pair<simtime_t, double>> values;
-    Rectangle bounds;
 
   protected:
-    void redrawYTicks();
-    void redrawXTicks();
+    void redrawValueTicks();
+    void redrawTimeTicks();
     void addChildren();
     void layout();
     void refresh();
@@ -73,14 +74,17 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
     const Rectangle& getBounds() const;
     void setBounds(const Rectangle& rect);
 
-    double getTickSize() const;
-    void setTickSize(double size);
+    const Color& getBackgrouncColor() const;
+    void setBackgroundColor(const Color& color);
 
-    double getTimeWindow() const;
-    void setTimeWindow(double timeWindow);
+    double getValueTickSize() const;
+    void setValueTickSize(double size);
 
-    double getTimeTickSize() const;
-    void setTimeTickSize(double size);
+    simtime_t getTimeWindow() const;
+    void setTimeWindow(simtime_t timeWindow);
+
+    simtime_t getTimeTickSize() const;
+    void setTimeTickSize(simtime_t size);
 
     const Color& getLineColor() const;
     void setLineColor(const Color& color);
@@ -90,6 +94,15 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
 
     double getMaxValue() const;
     void setMaxValue(double value);
+
+    const char* getLabel() const;
+    void setLabel(const char* text);
+
+    const Font& getLabelFont() const;
+    void setLabelFont(const Font& font);
+
+    const Color& getLabelColor() const;
+    void setLabelColor(const Color& color);
 };
 
 #else
