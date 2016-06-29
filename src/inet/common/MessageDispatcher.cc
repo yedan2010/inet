@@ -15,11 +15,11 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/common/MessageDispatcher.h"
 #include "inet/common/IPacketControlInfo.h"
-#include "inet/common/ISocketControlInfo.h"
 #include "inet/common/IProtocolControlInfo.h"
-#include "inet/common/IInterfaceControlInfo.h"
+#include "inet/common/ISocketControlInfo.h"
+#include "inet/common/MessageDispatcher.h"
+#include "inet/linklayer/common/InterfaceTag_m.h"
 
 namespace inet {
 
@@ -45,8 +45,8 @@ int MessageDispatcher::computeSocketId(cMessage *message)
 
 int MessageDispatcher::computeInterfaceId(cMessage *message)
 {
-    IInterfaceControlInfo *controlInfo = dynamic_cast<IInterfaceControlInfo *>(message->getControlInfo());
-    return controlInfo != nullptr ? controlInfo->getInterfaceId() : -1;
+    auto interfaceReq = message->getTag<InterfaceReq>();
+    return interfaceReq != nullptr ? interfaceReq->getInterfaceId() : -1;
 }
 
 int MessageDispatcher::computeUpperLayerProtocolId(cMessage *message)
