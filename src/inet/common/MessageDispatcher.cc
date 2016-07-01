@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/common/ISocketControlInfo.h"
+#include "inet/applications/common/SocketTag_m.h"
 #include "inet/common/MessageDispatcher.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
@@ -38,8 +38,8 @@ void MessageDispatcher::initialize()
 
 int MessageDispatcher::computeSocketId(cMessage *message)
 {
-    ISocketControlInfo *controlInfo = dynamic_cast<ISocketControlInfo *>(message->getControlInfo());
-    return controlInfo != nullptr ? controlInfo->getSocketId() : -1;
+    auto *socketReq = message->getTag<SocketReq>();
+    return socketReq != nullptr ? socketReq->getSocketId() : -1;
 }
 
 int MessageDispatcher::computeInterfaceId(cMessage *message)
