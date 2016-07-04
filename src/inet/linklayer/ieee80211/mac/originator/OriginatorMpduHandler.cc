@@ -46,7 +46,7 @@ void OriginatorMpduHandler::processRtsProtectionFailed(Ieee80211DataOrMgmtFrame*
 
 void OriginatorMpduHandler::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
 {
-    if (false) // TODO: isBroadcastOrMulticast
+    if (transmittedFrame->getReceiverAddress().isMulticast())
         recoveryProcedure->multicastFrameTransmitted();
     if (transmittedFrame->getType() == ST_DATA || dynamic_cast<Ieee80211ManagementFrame *>(transmittedFrame))
         ackHandler->processTransmittedNonQoSFrame(check_and_cast<Ieee80211DataOrMgmtFrame *>(transmittedFrame));
@@ -69,7 +69,6 @@ void OriginatorMpduHandler::processFailedFrame(Ieee80211DataOrMgmtFrame* failedF
 void OriginatorMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee80211Frame *lastTransmittedFrame)
 {
     if (frame->getType() == ST_ACK) {
-        // TODO: check transmitter addr
         recoveryProcedure->ackFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
         ackHandler->processReceivedAck(check_and_cast<Ieee80211ACKFrame *>(frame), check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
         inProgressFrames->dropAndDeleteFrame(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));

@@ -55,7 +55,10 @@ void RecipientQoSMpduHandler::processManagementFrame(Ieee80211ManagementFrame* f
         originatorBlockAckAgreementHandler->processReceivedAddbaResponse(addbaResponse);
     }
     else if (auto delba = dynamic_cast<Ieee80211Delba*>(frame)) {
-        originatorBlockAckAgreementHandler->processReceivedDelba(delba);
+        if (delba->getInitiator())
+            recipientBlockAckAgreementHandler->processReceivedDelba(delba);
+        else
+            originatorBlockAckAgreementHandler->processReceivedDelba(delba);
     }
     else
         throw cRuntimeError("Unknown packet");

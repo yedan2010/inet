@@ -56,7 +56,7 @@ void OriginatorQoSMpduHandler::processRtsProtectionFailed(Ieee80211DataOrMgmtFra
 
 void OriginatorQoSMpduHandler::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
 {
-    if (false) // TODO: multicast...
+    if (transmittedFrame->getReceiverAddress().isMulticast())
         recoveryProcedure->multicastFrameTransmitted();
     if (transmittedFrame->getType() == ST_DATA_WITH_QOS) {
         auto dataFrame = check_and_cast<Ieee80211DataFrame *>(transmittedFrame);
@@ -71,6 +71,9 @@ void OriginatorQoSMpduHandler::processTransmittedFrame(Ieee80211Frame* transmitt
     }
     else if (auto addbaResp = dynamic_cast<Ieee80211AddbaResponse*>(transmittedFrame)) {
         ackHandler->processTransmittedMgmtFrame(addbaResp);
+    }
+    else if (auto delba = dynamic_cast<Ieee80211Delba *>(transmittedFrame)) {
+        ackHandler->processTransmittedMgmtFrame(delba);
     }
     else
         // TODO: control frames, etc, void
