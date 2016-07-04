@@ -53,7 +53,8 @@ class INET_API OriginatorBlockAckAgreementHandler : public cSimpleModule
 
         OriginatorBlockAckAgreement *getAgreement(MACAddress receiverAddr, Tid tid);
 
-        virtual void processAddBaRequest(Ieee80211AddbaRequest *addbaRequest);
+        virtual void processReceivedDelba(Ieee80211Delba* delba);
+        virtual void processAddbaRequest(Ieee80211AddbaRequest *addbaRequest);
         virtual void processTransmittedDelbaRequest(Ieee80211Delba *frame);
         virtual void processReceivedAddbaResponse(Ieee80211AddbaResponse *addbaResponse);
         virtual Ieee80211AddbaRequest *buildAddbaRequest(MACAddress receiverAddr, Tid tid, int startingSequenceNumber);

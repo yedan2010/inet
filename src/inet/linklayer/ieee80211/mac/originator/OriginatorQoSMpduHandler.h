@@ -65,7 +65,6 @@ class OriginatorQoSMpduHandler : public IOriginatorMpduHandler, public cSimpleMo
         virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
         virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
         virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
-        virtual void processBlockAckAgreementTerminated(OriginatorBlockAckAgreement *agreement);
 
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame* frame) override;
         virtual bool hasFrameToTransmit() override;

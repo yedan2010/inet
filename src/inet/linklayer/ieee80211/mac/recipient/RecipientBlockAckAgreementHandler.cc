@@ -68,6 +68,7 @@ Ieee80211Delba* RecipientBlockAckAgreementHandler::buildDelba(MACAddress receive
     delba->setInitiator(false);
     delba->setTid(tid);
     delba->setReasonCode(reasonCode);
+    delba->setDuration(rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_ACK) + sifs);
     return delba;
 }
 

@@ -173,10 +173,6 @@ void OriginatorQoSMpduHandler::processUpperFrame(Ieee80211DataOrMgmtFrame* frame
     }
 }
 
-void OriginatorQoSMpduHandler::processBlockAckAgreementTerminated(OriginatorBlockAckAgreement* agreement)
-{
-}
-
 bool OriginatorQoSMpduHandler::hasFrameToTransmit()
 {
     return !pendingQueue->isEmpty() || inProgressFrames->hasInProgressFrames();

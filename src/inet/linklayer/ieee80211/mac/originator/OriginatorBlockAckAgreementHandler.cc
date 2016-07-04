@@ -45,7 +45,7 @@ void OriginatorBlockAckAgreementHandler::handleMessage(cMessage* msg)
     throw cRuntimeError("This module does not handle self messages.");
 }
 
-void OriginatorBlockAckAgreementHandler::processAddBaRequest(Ieee80211AddbaRequest *addbaRequest)
+void OriginatorBlockAckAgreementHandler::processAddbaRequest(Ieee80211AddbaRequest *addbaRequest)
 {
     OriginatorBlockAckAgreement *blockAckAgreement = new OriginatorBlockAckAgreement(addbaRequest->getBufferSize(), addbaRequest->getAMsduSupported(), addbaRequest->getBlockAckPolicy() == 0);
     auto agreementId = std::make_pair(addbaRequest->getReceiverAddress(), addbaRequest->getTid());
@@ -110,6 +110,21 @@ Ieee80211AddbaRequest* OriginatorBlockAckAgreementHandler::buildAddbaRequest(MAC
     return addbaRequest;
 }
 
+void OriginatorBlockAckAgreementHandler::processReceivedDelba(Ieee80211Delba* delba)
+{
+    Tid tid = delba->getTid();
+    MACAddress transmitterAddr = delba->getTransmitterAddress();
+    auto agreementId = std::make_pair(transmitterAddr, tid);
+    auto it = blockAckAgreements.find(agreementId);
+    if (it != blockAckAgreements.end()) {
+        delete it->second;
+        blockAckAgreements.erase(it);
+    }
+    else {
+        EV_DETAIL << "Received Delba frame but agreement does not exist" << endl;
+    }
+}
+
 OriginatorBlockAckAgreement* OriginatorBlockAckAgreementHandler::getAgreement(MACAddress receiverAddr, Tid tid)
 {
     auto agreementId = std::make_pair(receiverAddr, tid);
@@ -125,6 +140,7 @@ Ieee80211Delba* OriginatorBlockAckAgreementHandler::buildDelba(MACAddress receiv
     delba->setReasonCode(reasonCode);
     // The Initiator subfield indicates if the originator or the recipient of the data is sending this frame.
     delba->setInitiator(true);
+    delba->setDuration(rateSelection->getResponseControlFrameMode()->getDuration(LENGTH_ACK) + sifs);
     return delba;
 }
 
@@ -140,3 +156,4 @@ Ieee80211Frame *OriginatorBlockAckAgreementHandler::setFrameMode(Ieee80211Frame 
 
 } // namespace ieee80211
 } // namespace inet
+

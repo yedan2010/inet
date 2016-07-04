@@ -64,7 +64,7 @@ int TxOpFs::selectTxOpSequence(AlternativesFs *frameSequence, FrameSequenceConte
             // The Starting Sequence Number subfield of the Block Ack Starting Sequence Control subfield
             // contains the sequence number of the first MSDU for which this Basic BlockAckReq frame is sent
             auto addbaReq = context->getBlockAckAgreementHandler()->buildAddbaRequest(dataFrameToTransmit->getReceiverAddress(), dataFrameToTransmit->getTid(), dataFrameToTransmit->getSequenceNumber());
-            context->getBlockAckAgreementHandler()->processAddBaRequest(addbaReq);
+            context->getBlockAckAgreementHandler()->processAddbaRequest(addbaReq);
             context->insertPendingFrame(addbaReq);
             return 1;
         }
