@@ -27,7 +27,6 @@ import inet.linklayer.ieee80211.mac.contract.IContention;
 simple Contention like IContention
 {
     parameters:
-        string macModule;
         string collisionControllerModule = default("");
         bool initialChannelBusy = default(true); // assume that channel was busy before the simulation started
         bool backoffOptimization = default(true);    // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately

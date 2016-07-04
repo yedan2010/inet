@@ -18,6 +18,7 @@
 //
 
 #include "inet/common/FSMA.h"
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/contention/Contention.h"
 #include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
@@ -38,7 +39,7 @@ Define_Module(Contention);
 void Contention::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        mac = check_and_cast<IMacRadioInterface *>(getModuleByPath(par("macModule")));
+        mac = check_and_cast<IMacRadioInterface *>(getContainingNicModule(this));
         collisionController = dynamic_cast<ICollisionController *>(getModuleByPath(par("collisionControllerModule")));
         backoffOptimization = par("backoffOptimization");
         lastIdleStartTime = simTime() - SimTime::getMaxTime() / 2;

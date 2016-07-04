@@ -37,7 +37,6 @@ module Dcf
         string rxModule;
         string txModule;
         string rateSelectionModule;
-        *.macModule = "^." + macModule;
         *.difsTime = difsTime;
         *.rateSelectionModule = "^." + rateSelectionModule;
         *.rxModule = "^." + rxModule;
