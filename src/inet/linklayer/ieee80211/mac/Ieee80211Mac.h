@@ -113,13 +113,10 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     Ieee80211Mac();
     virtual ~Ieee80211Mac();
 
-    virtual const MACAddress& getAddress() const {return address;}
+    virtual const MACAddress& getAddress() const { return address; }
     virtual void sendUp(cMessage *message) override;
     virtual void sendFrame(Ieee80211Frame *frameToSend) override;
     virtual void sendDownPendingRadioConfigMsg() override;
-
-    virtual void setAddressAndTransmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback);
-
 };
 
 } // namespace ieee80211

@@ -50,7 +50,6 @@ void Edcaf::initialize(int stage)
         simtime_t aifs = sifs + aifsn * slotTime;
         ifs = aifs;
         eifs = sifs + aifs + referenceMode->getDuration(LENGTH_ACK);
-        mac = check_and_cast<Ieee80211Mac *>(getModuleByPath(par("macModule")));
     }
 }
 

@@ -13,6 +13,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Edca.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
@@ -26,16 +27,16 @@ Define_Module(RecipientQoSMpduHandler);
 void RecipientQoSMpduHandler::initialize(int stage)
 {
     if (stage == INITSTAGE_LAST) {
-        mac = check_and_cast<Ieee80211Mac *>(getModuleByPath(par("macModule")));
+        mac = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this));
         macDataService = check_and_cast<RecipientQoSMacDataService*>(getModuleByPath(par("recipientMacDataServiceModule")));
         recipientBlockAckAgreementHandler = check_and_cast<RecipientBlockAckAgreementHandler*>(getModuleByPath(par("recipientBlockAckAgreementHandler")));
         originatorBlockAckAgreementHandler = check_and_cast<OriginatorBlockAckAgreementHandler*>(getModuleByPath(par("originatorBlockAckAgreementHandlerModule")));
         auto rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
+        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
         ackProcedure = new AckProcedure(rateSelection);
         ctsProcedure = new CtsProcedure(rx, rateSelection);
         blockAckProcedure = new BlockAckProcedure(recipientBlockAckAgreementHandler, rateSelection);
-
         sifs = rateSelection->getSlowestMandatoryMode()->getSifsTime();
     }
 }
@@ -63,7 +64,7 @@ void RecipientQoSMpduHandler::processControlFrame(Ieee80211Frame* frame) // TODO
         ctsProcedure->processReceivedRts(rtsFrame);
         auto ctsFrame = ctsProcedure->buildCts(rtsFrame);
         if (ctsFrame) {
-            mac->setAddressAndTransmitFrame(ctsFrame, sifs, this);
+            tx->transmitFrame(ctsFrame, sifs, this);
             ctsProcedure->processTransmittedCts(ctsFrame);
         }
     }
@@ -71,7 +72,7 @@ void RecipientQoSMpduHandler::processControlFrame(Ieee80211Frame* frame) // TODO
         blockAckProcedure->processReceivedBlockAckReq(blockAckRequest);
         auto blockAck = blockAckProcedure->buildBlockAck(blockAckRequest);
         if (blockAck) {
-            mac->setAddressAndTransmitFrame(blockAck, sifs, this);
+            tx->transmitFrame(blockAck, sifs, this);
             blockAckProcedure->processTransmittedBlockAck(blockAck);
         }
     }
@@ -84,7 +85,7 @@ void RecipientQoSMpduHandler::processReceivedFrame(Ieee80211Frame* frame)
     ackProcedure->processReceivedFrame(frame);
     auto ack = ackProcedure->buildAck(frame);
     if (ack) {
-        mac->setAddressAndTransmitFrame(ack, sifs, this);
+        tx->transmitFrame(ack, sifs, this);
         ackProcedure->processTransmittedAck(ack);
     }
     if (auto dataFrame = dynamic_cast<Ieee80211DataFrame*>(frame)) {

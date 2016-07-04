@@ -49,7 +49,7 @@ Edcaf* Edca::getActiveEdcaf()
 void Edca::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
 {
     AccessCategory ac = classifyFrame(frame);
-    edcafs[ac]->upperFrameReceived(frame);
+    edcafs[ac]->processUpperFrame(frame);
 }
 
 Tid Edca::getTid(Ieee80211DataOrMgmtFrame* frame)
@@ -67,7 +67,7 @@ Tid Edca::getTid(Ieee80211DataOrMgmtFrame* frame)
 
 void Edca::lowerFrameReceived(Ieee80211Frame* frame)
 {
-    getActiveEdcaf()->lowerFrameReceived(frame);
+    getActiveEdcaf()->processLowerFrame(frame);
 }
 
 AccessCategory Edca::classifyFrame(Ieee80211DataOrMgmtFrame *frame)

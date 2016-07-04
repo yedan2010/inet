@@ -35,7 +35,6 @@ module Edcaf
         string originatorMpduHandlerModule;
         string rxModule;
         string txModule;
-        string macModule; // TODO: remove
         string collisionControllerModule;
         *.macModule = "^." + macModule;
         *.collisionControllerModule = "^." + collisionControllerModule;

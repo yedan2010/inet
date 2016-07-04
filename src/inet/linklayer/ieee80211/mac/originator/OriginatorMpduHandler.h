@@ -53,7 +53,7 @@ class OriginatorMpduHandler : public IOriginatorMpduHandler, public cSimpleModul
         virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
         virtual void processReceivedFrame(Ieee80211Frame* frame, Ieee80211Frame *lastTransmittedFrame) override;
 
-        virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
+        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame) override;
         virtual bool hasFrameToTransmit() override;
 
         virtual FrameSequenceContext* buildContext() override;

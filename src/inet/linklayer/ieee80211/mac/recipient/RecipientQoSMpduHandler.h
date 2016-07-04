@@ -40,6 +40,7 @@ class INET_API RecipientQoSMpduHandler : public IRecipientMpduHandler, public IT
         BlockAckProcedure *blockAckProcedure = nullptr;
         CtsProcedure *ctsProcedure = nullptr;
         AckProcedure *ackProcedure = nullptr;
+        ITx *tx = nullptr;
 
         simtime_t sifs = -1;
 

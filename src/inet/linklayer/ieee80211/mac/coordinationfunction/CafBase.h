@@ -1,4 +1,6 @@
 //
+// Copyright (C) 2016 OpenSim Ltd.
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -40,7 +42,6 @@ class Ieee80211Mac;
 class INET_API CafBase : public cSimpleModule, public ITx::ICallback
 {
     protected:
-        Ieee80211Mac *mac = nullptr;
         IOriginatorMpduHandler *originatorMpduHandler = nullptr;
         ITx *tx = nullptr;
         IRx *rx = nullptr;
@@ -70,8 +71,8 @@ class INET_API CafBase : public cSimpleModule, public ITx::ICallback
         virtual void abortFrameSequence();
 
     public:
-        virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame);
-        virtual void lowerFrameReceived(Ieee80211Frame *frame);
+        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame);
+        virtual void processLowerFrame(Ieee80211Frame *frame);
         virtual void transmissionComplete() override;
 
         virtual bool isSequenceRunning() { return frameSequence != nullptr; }

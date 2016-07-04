@@ -83,7 +83,7 @@ void OriginatorMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee8021
 }
 
 
-void OriginatorMpduHandler::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void OriginatorMpduHandler::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     if (pendingQueue->insert(frame))
         EV_INFO << "Frame " << frame->getName() << " has been inserted into the PendingQueue." << endl;

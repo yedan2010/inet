@@ -45,7 +45,6 @@ void Dcf::initialize(int stage)
         ifs = fallback(par("difsTime"), sifs + 2 * slotTime);
         eifs = sifs + ifs + referenceMode->getDuration(LENGTH_ACK);
         contention->setTxIndex(0); // FIXME
-        mac = check_and_cast<Ieee80211Mac *>(getModuleByPath(par("macModule")));
     }
 }
 

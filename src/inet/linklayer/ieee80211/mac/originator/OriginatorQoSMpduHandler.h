@@ -67,7 +67,7 @@ class OriginatorQoSMpduHandler : public IOriginatorMpduHandler, public cSimpleMo
         virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
         virtual void processBlockAckAgreementTerminated(OriginatorBlockAckAgreement *agreement);
 
-        virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame* frame) override;
+        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame* frame) override;
         virtual bool hasFrameToTransmit() override;
 
         // FIXME: Edca

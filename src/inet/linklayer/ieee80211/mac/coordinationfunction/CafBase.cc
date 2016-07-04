@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Andras Varga
+// Copyright (C) 2016 OpenSim Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-//
-// Author: Andras Varga
 //
 
 #include "inet/common/INETUtils.h"
@@ -60,15 +58,15 @@ void CafBase::handleMessage(cMessage* message)
         throw cRuntimeError("Unknown message");
 }
 
-void CafBase::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void CafBase::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
     take(frame);
-    originatorMpduHandler->upperFrameReceived(frame);
+    originatorMpduHandler->processUpperFrame(frame);
     startContentionIfNecessary();
 }
 
-void CafBase::lowerFrameReceived(Ieee80211Frame* frame)
+void CafBase::processLowerFrame(Ieee80211Frame* frame)
 {
     Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
     auto lastStep = context->getLastStep();
@@ -129,7 +127,7 @@ void CafBase::startFrameSequenceStep()
                 EV_INFO << "Transmitting, frame = " << transmitStep->getFrameToTransmit() << "\n";
                 // The allowable frame exchange sequence is defined by the rule frame sequence. Except where modified by
                 // the pifs attribute, frames are separated by a SIFS. (G.2 Basic sequences)
-                mac->setAddressAndTransmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs(), this);
+                tx->transmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs(), this);
 //                if (auto dataFrame = dynamic_cast<Ieee80211DataFrame *>(transmitStep->getFrameToTransmit()))
 //                    transmitLifetimeHandler->frameTransmitted(dataFrame);
                 break;

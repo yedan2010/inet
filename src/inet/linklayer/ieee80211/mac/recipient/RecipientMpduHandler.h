@@ -32,6 +32,7 @@ class INET_API RecipientMpduHandler : public IRecipientMpduHandler, public ITx::
 {
     protected:
         Ieee80211Mac *mac = nullptr;
+        ITx *tx = nullptr;
         RecipientMacDataService *macDataService = nullptr;
         CtsProcedure *ctsProcedure = nullptr;
         AckProcedure *ackProcedure = nullptr;

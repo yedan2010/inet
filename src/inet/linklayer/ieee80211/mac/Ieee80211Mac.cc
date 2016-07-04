@@ -249,7 +249,7 @@ void Ieee80211Mac::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
     EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << "\n";
     ASSERT(!frame->getReceiverAddress().isUnspecified());
     if (frame->getType() == ST_DATA)
-        dcf->upperFrameReceived(frame);
+        dcf->processUpperFrame(frame);
     else if (frame->getType() == ST_DATA_WITH_QOS)
         hcf->upperFrameReceived(frame);
     else
@@ -277,7 +277,7 @@ void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
     }
     // TODO: collision controller
     else if (dcf->isSequenceRunning())
-        dcf->lowerFrameReceived(frame);
+        dcf->processLowerFrame(frame);
     else if (hcf->isSequenceRunning())
         hcf->lowerFrameReceived(frame);
     else if (isQoSFrame(frame))
@@ -285,21 +285,6 @@ void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
     else
         recipientMpduHandler->processReceivedFrame(frame);
 }
-
-// TODO: revise this
-void Ieee80211Mac::setAddressAndTransmitFrame(Ieee80211Frame* frame, simtime_t ifs, ITx::ICallback* txCallback)
-{
-    if (auto twoAddrFrame = dynamic_cast<Ieee80211TwoAddressFrame*>(frame)) {
-        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(twoAddrFrame);
-        frameToTransmit->setTransmitterAddress(address);
-        tx->transmitFrame(frameToTransmit, ifs, txCallback);
-    }
-    else {
-        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(frame);
-        tx->transmitFrame(frameToTransmit, ifs, txCallback);
-    }
-}
-
 
 // FIXME
 bool Ieee80211Mac::handleNodeStart(IDoneCallback *doneCallback)

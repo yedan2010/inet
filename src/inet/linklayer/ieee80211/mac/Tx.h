@@ -36,14 +36,14 @@ class IStatistics;
 class INET_API Tx : public cSimpleModule, public ITx
 {
     protected:
-        MACAddress address;
+        MACAddress address = MACAddress::UNSPECIFIED_ADDRESS;
         ITx::ICallback *txCallback = nullptr;
-        IMacRadioInterface *mac;
-        IRx *rx;
-        IStatistics *statistics;
+        IMacRadioInterface *mac = nullptr;
+        IRx *rx = nullptr;
+        IStatistics *statistics = nullptr;
         Ieee80211Frame *frame = nullptr;
         cMessage *endIfsTimer = nullptr;
-        simtime_t durationField;
+        simtime_t durationField = -1;
         bool transmitting = false;
 
     protected:
@@ -65,4 +65,3 @@ class INET_API Tx : public cSimpleModule, public ITx
 } // namespace inet
 
 #endif
-

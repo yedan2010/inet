@@ -163,7 +163,7 @@ s OriginatorQoSMpduHandler::getTxopLimit(const IIeee80211Mode *mode)
     }
 }
 
-void OriginatorQoSMpduHandler::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void OriginatorQoSMpduHandler::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     if (pendingQueue->insert(frame))
         EV_INFO << "Frame " << frame->getName() << " has been inserted into the PendingQueue." << endl;

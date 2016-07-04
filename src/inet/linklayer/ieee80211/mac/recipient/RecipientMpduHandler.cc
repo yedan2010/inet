@@ -13,8 +13,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include "RecipientMpduHandler.h"
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
+#include "RecipientMpduHandler.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -24,9 +25,10 @@ Define_Module(RecipientMpduHandler);
 void RecipientMpduHandler::initialize(int stage)
 {
     if (stage == INITSTAGE_LAST) {
-        mac = check_and_cast<Ieee80211Mac *>(getModuleByPath(par("macModule")));
+        mac = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this));
         macDataService = check_and_cast<RecipientMacDataService*>(getModuleByPath(par("recipientDataServiceModule")));
         auto rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
+        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
         ackProcedure = new AckProcedure(rateSelection);
         ctsProcedure = new CtsProcedure(rx, rateSelection);
@@ -41,7 +43,7 @@ void RecipientMpduHandler::processControlFrame(Ieee80211Frame* frame) // TODO: c
         ctsProcedure->processReceivedRts(rtsFrame);
         auto ctsFrame = ctsProcedure->buildCts(rtsFrame);
         if (ctsFrame) {
-            mac->setAddressAndTransmitFrame(ctsFrame, sifs, this);
+            tx->transmitFrame(ctsFrame, sifs, this);
             ctsProcedure->processTransmittedCts(ctsFrame);
         }
     }
@@ -52,7 +54,7 @@ void RecipientMpduHandler::processReceivedFrame(Ieee80211Frame* frame)
     ackProcedure->processReceivedFrame(frame);
     auto ack = ackProcedure->buildAck(frame);
     if (ack) {
-        mac->setAddressAndTransmitFrame(ack, sifs, this);
+        tx->transmitFrame(ack, sifs, this);
         ackProcedure->processTransmittedAck(ack);
     }
     if (auto dataFrame = dynamic_cast<Ieee80211DataFrame*>(frame)) {

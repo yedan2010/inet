@@ -17,6 +17,7 @@
 // Author: Andras Varga
 //
 
+#include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
@@ -62,8 +63,15 @@ void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txC
     this->txCallback = txCallback;
     Enter_Method("transmitFrame(\"%s\")", frame->getName());
     take(frame);
-    this->frame = frame;
-
+    if (auto twoAddrFrame = dynamic_cast<Ieee80211TwoAddressFrame*>(frame)) {
+        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(twoAddrFrame);
+        frameToTransmit->setTransmitterAddress(address);
+        this->frame = frameToTransmit;
+    }
+    else {
+        auto frameToTransmit = inet::utils::dupPacketAndControlInfo(frame);
+        this->frame = frameToTransmit;
+    }
     ASSERT(!endIfsTimer->isScheduled() && !transmitting);    // we are idle
     scheduleAt(simTime() + ifs, endIfsTimer);
     if (hasGUI())
