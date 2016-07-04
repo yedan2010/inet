@@ -64,31 +64,26 @@ Ieee80211DataOrMgmtFrame *InProgressFrames::getFrameToTransmit()
     return nullptr;
 }
 
-void InProgressFrames::dropAndDeleteFrame(int seqNum, int fragNum)
+void InProgressFrames::dropFrame(int seqNum, int fragNum)
 {
     for (auto it = inProgressFrames.begin(); it != inProgressFrames.end(); it++) {
         Ieee80211DataOrMgmtFrame *frame = *it;
         if (frame->getSequenceNumber() == seqNum && frame->getFragmentNumber() == fragNum) {
             inProgressFrames.erase(it);
-            // delete frame; // FIXME
             return;
         }
     }
 }
 
-void InProgressFrames::dropAndDeleteFrame(Ieee80211DataOrMgmtFrame* frame)
+void InProgressFrames::dropFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     inProgressFrames.remove(frame);
-    // delete frame; FIXME: txop, abortFrameSequence
 }
 
-void InProgressFrames::dropAndDeleteFrames(std::set<SequenceControlField> seqAndFragNums)
+void InProgressFrames::dropFrames(std::set<SequenceControlField> seqAndFragNums)
 {
     SequenceControlPredicate predicate(seqAndFragNums);
     inProgressFrames.remove_if(predicate);
-    const std::vector<const Ieee80211DataOrMgmtFrame *>& framesToDelete = predicate.getFramesToDelete();
-//    for (auto frame : framesToDelete)
-//        delete frame; // FIXME
 }
 
 std::vector<Ieee80211DataFrame*> InProgressFrames::getOutstandingFrames()

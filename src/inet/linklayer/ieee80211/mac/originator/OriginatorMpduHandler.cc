@@ -40,8 +40,10 @@ void OriginatorMpduHandler::processRtsProtectionFailed(Ieee80211DataOrMgmtFrame*
     EV_INFO << "RTS frame transmission failed\n";
     recoveryProcedure->rtsFrameTransmissionFailed(protectedFrame);
     bool retryLimitReached = recoveryProcedure->isRtsFrameRetryLimitReached(protectedFrame);
-    if (retryLimitReached)
-        inProgressFrames->dropAndDeleteFrame(protectedFrame);
+    if (retryLimitReached) {
+        inProgressFrames->dropFrame(protectedFrame);
+        delete protectedFrame;
+    }
 }
 
 void OriginatorMpduHandler::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
@@ -57,12 +59,13 @@ void OriginatorMpduHandler::processTransmittedFrame(Ieee80211Frame* transmittedF
 void OriginatorMpduHandler::processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
 {
     ASSERT(failedFrame->getType() != ST_DATA_WITH_QOS);
-    if (ackHandler->getAckStatus(failedFrame) == AckHandler::Status::WAITING_FOR_NORMAL_ACK) {
-        EV_INFO << "Data/Mgmt frame transmission failed\n";
-        recoveryProcedure->dataOrMgmtFrameTransmissionFailed(failedFrame);
-        bool retryLimitReached = recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(failedFrame);
-        if (retryLimitReached)
-            inProgressFrames->dropAndDeleteFrame(failedFrame);
+    ASSERT(ackHandler->getAckStatus(failedFrame) == AckHandler::Status::WAITING_FOR_NORMAL_ACK);
+    EV_INFO << "Data/Mgmt frame transmission failed\n";
+    recoveryProcedure->dataOrMgmtFrameTransmissionFailed(failedFrame);
+    bool retryLimitReached = recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(failedFrame);
+    if (retryLimitReached) {
+        inProgressFrames->dropFrame(failedFrame);
+        delete failedFrame;
     }
 }
 
@@ -71,7 +74,7 @@ void OriginatorMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee8021
     if (frame->getType() == ST_ACK) {
         recoveryProcedure->ackFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
         ackHandler->processReceivedAck(check_and_cast<Ieee80211ACKFrame *>(frame), check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
-        inProgressFrames->dropAndDeleteFrame(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
+        inProgressFrames->dropFrame(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
     }
     else if (frame->getType() == ST_RTS)
         ; // void

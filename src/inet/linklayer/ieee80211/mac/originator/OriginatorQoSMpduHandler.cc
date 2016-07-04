@@ -50,8 +50,10 @@ void OriginatorQoSMpduHandler::processRtsProtectionFailed(Ieee80211DataOrMgmtFra
     EV_INFO << "RTS frame transmission failed\n";
     recoveryProcedure->rtsFrameTransmissionFailed(protectedFrame);
     bool retryLimitReached = recoveryProcedure->isRtsFrameRetryLimitReached(protectedFrame);
-    if (retryLimitReached)
-        inProgressFrames->dropAndDeleteFrame(protectedFrame);
+    if (retryLimitReached) {
+        inProgressFrames->dropFrame(protectedFrame);
+        delete protectedFrame;
+    }
 }
 
 void OriginatorQoSMpduHandler::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
@@ -62,7 +64,7 @@ void OriginatorQoSMpduHandler::processTransmittedFrame(Ieee80211Frame* transmitt
         auto dataFrame = check_and_cast<Ieee80211DataFrame *>(transmittedFrame);
         ackHandler->processTransmittedQoSData(dataFrame);
         if (dataFrame->getAckPolicy() == NO_ACK)
-            inProgressFrames->dropAndDeleteFrame(dataFrame);
+            inProgressFrames->dropFrame(dataFrame);
     }
     else if (auto blockAckReq = dynamic_cast<Ieee80211BlockAckReq*>(transmittedFrame))
         ackHandler->processTransmittedBlockAckReq(blockAckReq);
@@ -75,9 +77,7 @@ void OriginatorQoSMpduHandler::processTransmittedFrame(Ieee80211Frame* transmitt
     else if (auto delba = dynamic_cast<Ieee80211Delba *>(transmittedFrame)) {
         ackHandler->processTransmittedMgmtFrame(delba);
     }
-    else
-        // TODO: control frames, etc, void
-        ;
+    else ; // etc??
 }
 
 void OriginatorQoSMpduHandler::processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
@@ -88,14 +88,18 @@ void OriginatorQoSMpduHandler::processFailedFrame(Ieee80211DataOrMgmtFrame* fail
         if (dataFrame->getAckPolicy() == NORMAL_ACK) {
             recoveryProcedure->dataOrMgmtFrameTransmissionFailed(dataFrame);
             bool retryLimitReached = recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(dataFrame);
-            if (retryLimitReached)
-                inProgressFrames->dropAndDeleteFrame(dataFrame);
+            if (retryLimitReached) {
+                inProgressFrames->dropFrame(dataFrame);
+                delete dataFrame;
+            }
         }
         else if (dataFrame->getAckPolicy() == BLOCK_ACK) {
-    // TODO:
-    //        bool lifetimeExpired = lifetimeHandler->isLifetimeExpired(failedFrame);
-    //        if (lifetimeExpired)
-    //            inProgressFrames->dropAndDeleteFrame(failedFrame);
+            // TODO:
+            // bool lifetimeExpired = lifetimeHandler->isLifetimeExpired(failedFrame);
+            // if (lifetimeExpired) {
+            //    inProgressFrames->dropFrame(failedFrame);
+            //    delete dataFrame;
+            // }
         }
         else
             throw cRuntimeError("Unimplemented!");
@@ -110,7 +114,7 @@ void OriginatorQoSMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee8
     if (frame->getType() == ST_ACK) {
         recoveryProcedure->ackFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
         ackHandler->processReceivedAck(check_and_cast<Ieee80211ACKFrame *>(frame), check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
-        inProgressFrames->dropAndDeleteFrame(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
+        inProgressFrames->dropFrame(check_and_cast<Ieee80211DataOrMgmtFrame*>(lastTransmittedFrame));
     }
     else if (frame->getType() == ST_BLOCKACK) {
         EV_INFO << "BlockAck has arrived" << std::endl;
@@ -119,7 +123,7 @@ void OriginatorQoSMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee8
         EV_INFO << "It has acknowledged the following frames:" << std::endl;
         for (auto seqCtrlField : ackedSeqAndFragNums)
             EV_INFO << "Fragment number = " << seqCtrlField.getSequenceNumber() << " Sequence number = " << (int)seqCtrlField.getFragmentNumber() << std::endl;
-        inProgressFrames->dropAndDeleteFrames(ackedSeqAndFragNums);
+        inProgressFrames->dropFrames(ackedSeqAndFragNums);
     }
     else if (auto addbaResponse = dynamic_cast<Ieee80211AddbaResponse*>(frame)) {
         recipientBlockAckAgreementHandler->processTransmittedAddbaResponse(addbaResponse);
@@ -141,7 +145,7 @@ bool OriginatorQoSMpduHandler::internalCollision() // TODO: rename or split or m
     Ieee80211DataOrMgmtFrame *internallyCollidedFrame = inProgressFrames->getFrameToTransmit();
     recoveryProcedure->dataOrMgmtFrameTransmissionFailed(internallyCollidedFrame);
     if (recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(internallyCollidedFrame)) {
-        inProgressFrames->dropAndDeleteFrame(internallyCollidedFrame);
+        inProgressFrames->dropFrame(internallyCollidedFrame);
         return false;
     }
     return true;

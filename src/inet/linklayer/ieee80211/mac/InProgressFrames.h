@@ -33,18 +33,14 @@ class INET_API InProgressFrames
         {
             private:
                 const std::set<SequenceControlField>& seqAndFragNums;
-                std::vector<const Ieee80211DataOrMgmtFrame *> framesToDelete;
 
             public:
                 SequenceControlPredicate(const std::set<SequenceControlField>& seqAndFragNums) :
                     seqAndFragNums(seqAndFragNums) {}
 
                 bool operator() (const Ieee80211DataOrMgmtFrame *frame) {
-                    bool ok = seqAndFragNums.count(SequenceControlField(frame->getSequenceNumber(), frame->getFragmentNumber())) != 0;
-                    if (ok) framesToDelete.push_back(frame);
-                    return ok;
+                    return seqAndFragNums.count(SequenceControlField(frame->getSequenceNumber(), frame->getFragmentNumber())) != 0;
                 }
-                const std::vector<const Ieee80211DataOrMgmtFrame *>& getFramesToDelete() { return framesToDelete; }
         };
 
     protected:
@@ -66,9 +62,9 @@ class INET_API InProgressFrames
         { }
 
         virtual Ieee80211DataOrMgmtFrame *getFrameToTransmit();
-        virtual void dropAndDeleteFrame(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame);
-        virtual void dropAndDeleteFrame(int seqNum, int fragNum);
-        virtual void dropAndDeleteFrames(std::set<SequenceControlField> seqAndFragNums);
+        virtual void dropFrame(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame);
+        virtual void dropFrame(int seqNum, int fragNum);
+        virtual void dropFrames(std::set<SequenceControlField> seqAndFragNums);
 
         virtual bool hasInProgressFrames() { ensureHasFrameToTransmit(); return hasEligibleFrameToTransmit(); }
         virtual std::vector<Ieee80211DataFrame*> getOutstandingFrames();

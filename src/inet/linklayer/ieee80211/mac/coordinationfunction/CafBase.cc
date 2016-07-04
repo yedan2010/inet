@@ -199,25 +199,24 @@ void CafBase::finishFrameSequence(bool ok)
 void CafBase::abortFrameSequence()
 {
     EV_INFO << "Frame sequence aborted\n";
+    auto step = context->getLastStep();
+    auto failedTxStep = check_and_cast<ITransmitStep*>(dynamic_cast<IReceiveStep*>(step) ? context->getStepBeforeLast() : step);
+    auto frameToTransmit = failedTxStep->getFrameToTransmit();
+    if (auto dataOrMgmtFrame = dynamic_cast<Ieee80211DataOrMgmtFrame *>(frameToTransmit))
+        originatorMpduHandler->processFailedFrame(dataOrMgmtFrame);
+    else if (auto rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frameToTransmit)) {
+        auto rtsTxStep = dynamic_cast<RtsTransmitStep*>(failedTxStep);
+        originatorMpduHandler->processRtsProtectionFailed(rtsTxStep->getProtectedFrame());
+        delete rtsFrame;
+    }
+    else if (auto blockAckReq = dynamic_cast<Ieee80211BlockAckReq *>(frameToTransmit))
+        delete blockAckReq;
+    else ; // TODO: etc ?
+
     for (int i = 0; i < context->getNumSteps(); i++) {
-        auto step = context->getStep(i);
-        if (step->getType() == IFrameSequenceStep::Type::TRANSMIT) {
-            auto transmitStep = check_and_cast<ITransmitStep *>(step);
-            // FIXME: check if it is acked or not (txop)
-            Ieee80211Frame *failedFrame = transmitStep->getFrameToTransmit();
-            if (auto dataOrMgmtFrame = dynamic_cast<Ieee80211DataOrMgmtFrame *>(failedFrame))
-                originatorMpduHandler->processFailedFrame(dataOrMgmtFrame);
-            // TODO: Ieee80211ControlFrame
-            // TODO: originatorMpduHandler->processControlFrameFailed() ?
-            else if (failedFrame->getType() == ST_RTS) {
-                auto rtsTransmitStep = check_and_cast<RtsTransmitStep *>(step);
-                originatorMpduHandler->processRtsProtectionFailed(rtsTransmitStep->getProtectedFrame());
-            }
-            else if (failedFrame->getType() == ST_BLOCKACK_REQ) // FIXME: remove
-                /* TODO: BlockAckReq retransmission policy????????? */;
-            else
-                throw cRuntimeError("What to do? Probably ignore.");
-        }
+        if (auto txStep = dynamic_cast<ITransmitStep*>(context->getStep(i)))
+            if (txStep != failedTxStep)
+                delete txStep->getFrameToTransmit();
     }
     finishFrameSequence(false);
 }
