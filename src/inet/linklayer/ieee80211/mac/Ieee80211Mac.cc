@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Andras Varga
+// Copyright (C) 2016 OpenSim Ltd.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License
@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program; if not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
-
-#include <algorithm>
-
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
@@ -53,21 +48,15 @@ Ieee80211Mac::~Ieee80211Mac()
 void Ieee80211Mac::initialize(int stage)
 {
     MACProtocolBase::initialize(stage);
-
     if (stage == INITSTAGE_LOCAL) {
-        EV << "Initializing stage 0\n";
-
-        // radio
         cModule *radioModule = gate("lowerLayerOut")->getNextGate()->getOwnerModule();
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
         radioModule->subscribe(IRadio::receivedSignalPartChangedSignal, this);
         radio = check_and_cast<IRadio *>(radioModule);
-
         rx = check_and_cast<IRx *>(getSubmodule("rx"));
         tx = check_and_cast<ITx *>(getSubmodule("tx"));
-
         const char *addressString = par("address");
         if (!strcmp(addressString, "auto")) {
             // change module parameter from "auto" to concrete address
@@ -78,35 +67,32 @@ void Ieee80211Mac::initialize(int stage)
         modeSet = Ieee80211ModeSet::getModeSet(par("modeSet").stringValue());
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
-        // interface
         registerInterface();
         emit(NF_MODESET_CHANGED, modeSet);
-
         if (isOperational)
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
-        if (isInterfaceRegistered().isUnspecified())    //TODO do we need multi-MAC feature? if so, should they share interfaceEntry??  --Andras
+        if (isInterfaceRegistered().isUnspecified())// TODO: do we need multi-MAC feature? if so, should they share interfaceEntry??  --Andras
             registerInterface();
     }
     else if (stage == INITSTAGE_LINK_LAYER_2) {
-        rateControl = dynamic_cast<IRateControl *>(getModuleByPath(par("rateControlModule"))); // optional module
-        rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
+        rateControl = dynamic_cast<IRateControl *>(getSubmodule("rateControl")); // optional module
+        rateSelection = check_and_cast<IRateSelection *>(getSubmodule("rateSelection"));
         recipientMpduHandler = check_and_cast<RecipientMpduHandler *>(getSubmodule("dcf")->getSubmodule("recipientMpduHandler"));
         recipientQosMpduHandler = check_and_cast<RecipientQoSMpduHandler *>(getSubmodule("edca")->getSubmodule("recipientQoSMpduHandler"));
         rateSelection->setRateControl(rateControl);
-        rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
-        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
+        rx = check_and_cast<IRx *>(getSubmodule("rx"));
+        tx = check_and_cast<ITx *>(getSubmodule("tx"));
         dcf = check_and_cast<Dcf *>(getSubmodule("dcf"));
-        //pcf = new Pcf();
+        // TODO: pcf = new Pcf();
         hcf = new Hcf(check_and_cast<Edca*>(getSubmodule("edca")), nullptr); // TODO: nullptr -> check_and_cast<Hcca*>(getSubmodule("Hcca"))
-        //mcf = new Mcf();
+        // TODO: mcf = new Mcf();
     }
 }
 
 const MACAddress& Ieee80211Mac::isInterfaceRegistered()
 {
-//    if (!par("multiMac").boolValue())
-//        return MACAddress::UNSPECIFIED_ADDRESS;
-
+    // if (!par("multiMac").boolValue())
+    //    return MACAddress::UNSPECIFIED_ADDRESS;
     IInterfaceTable *ift = findModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
     if (!ift)
         return MACAddress::UNSPECIFIED_ADDRESS;
@@ -123,18 +109,14 @@ const MACAddress& Ieee80211Mac::isInterfaceRegistered()
 InterfaceEntry *Ieee80211Mac::createInterfaceEntry()
 {
     InterfaceEntry *e = new InterfaceEntry(this);
-
     // address
     e->setMACAddress(address);
     e->setInterfaceToken(address.formInterfaceIdentifier());
-
     e->setMtu(par("mtu").longValue());
-
     // capabilities
     e->setBroadcast(true);
     e->setMulticast(true);
     e->setPointToPoint(false);
-
     return e;
 }
 
@@ -145,14 +127,14 @@ void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 
 void Ieee80211Mac::handleUpperPacket(cPacket *msg)
 {
-    upperFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
+    processUpperFrame(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
 }
 
 void Ieee80211Mac::handleLowerPacket(cPacket *msg)
 {
     auto frame = check_and_cast<Ieee80211Frame *>(msg);
     if (rx->lowerFrameReceived(frame)) {
-        lowerFrameReceived(frame);
+        processLowerFrame(frame);
     }
 }
 
@@ -174,13 +156,10 @@ void Ieee80211Mac::handleUpperCommand(cMessage *msg)
 
         if (rx->isMediumFree()) {    // TODO: this should be just the physical channel sense!!!!
             EV_DEBUG << "Sending it down immediately\n";
-/*
-   // Dynamic power
-            PhyControlInfo *phyControlInfo = dynamic_cast<PhyControlInfo *>(msg->getControlInfo());
-            if (phyControlInfo)
-                phyControlInfo->setAdaptiveSensitivity(true);
-   // end dynamic power
- */
+            // PhyControlInfo *phyControlInfo = dynamic_cast<PhyControlInfo *>(msg->getControlInfo());
+            // if (phyControlInfo)
+            // phyControlInfo->setAdaptiveSensitivity(true);
+            // end dynamic power
             sendDown(msg);
         }
         else {
@@ -203,13 +182,11 @@ void Ieee80211Mac::receiveSignal(cComponent *source, simsignal_t signalID, long 
     else if (signalID == IRadio::transmissionStateChangedSignal) {
         auto oldTransmissionState = transmissionState;
         transmissionState = (IRadio::TransmissionState)value;
-
         bool transmissionFinished = (oldTransmissionState == IRadio::TRANSMISSION_STATE_TRANSMITTING && transmissionState == IRadio::TRANSMISSION_STATE_IDLE);
-
         if (transmissionFinished) {
             tx->radioTransmissionFinished();
             EV_DEBUG << "changing radio to receiver mode\n";
-            configureRadioMode(IRadio::RADIO_MODE_RECEIVER);    //FIXME this is in a very wrong place!!! should be done explicitly from UpperMac!
+            configureRadioMode(IRadio::RADIO_MODE_RECEIVER); // FIXME: this is in a very wrong place!!! should be done explicitly from UpperMac!
         }
         rx->transmissionStateChanged(transmissionState);
     }
@@ -246,9 +223,9 @@ void Ieee80211Mac::sendFrame(Ieee80211Frame *frame)
 
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()
 {
-    if (pendingRadioConfigMsg != NULL) {
+    if (pendingRadioConfigMsg != nullptr) {
         sendDown(pendingRadioConfigMsg);
-        pendingRadioConfigMsg = NULL;
+        pendingRadioConfigMsg = nullptr;
     }
 }
 
@@ -265,9 +242,9 @@ bool Ieee80211Mac::isSentByUs(Ieee80211Frame *frame) const
         return false;
 }
 
-void Ieee80211Mac::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void Ieee80211Mac::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
-    Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
+    Enter_Method("processUpperFrame(\"%s\")", frame->getName());
     take(frame);
     EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << "\n";
     ASSERT(!frame->getReceiverAddress().isUnspecified());
@@ -289,9 +266,9 @@ bool Ieee80211Mac::isQoSFrame(Ieee80211Frame* frame) const
            frame->getType() == ST_BLOCKACK_REQ || categoryThreeActionFrame;
 }
 
-void Ieee80211Mac::lowerFrameReceived(Ieee80211Frame* frame)
+void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
 {
-    Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
+    Enter_Method("processLowerFrame(\"%s\")", frame->getName());
     delete frame->removeControlInfo(); // TODO
     take(frame);
     if (!isForUs(frame)) {
@@ -350,4 +327,3 @@ void Ieee80211Mac::handleNodeCrash()
 
 } // namespace ieee80211
 } // namespace inet
-

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Andras Varga
+// Copyright (C) 2016 OpenSim Ltd.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License
@@ -14,16 +14,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program; if not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
 
 #ifndef __INET_IEEE80211MAC_H
 #define __INET_IEEE80211MAC_H
-
-// uncomment this if you do not want to log state machine transitions
-#define FSM_DEBUG
-
-#include <list>
 
 #include "inet/common/INETDefs.h"
 #include "inet/linklayer/base/MACProtocolBase.h"
@@ -39,19 +32,15 @@
 #include "inet/linklayer/ieee80211/mac/recipient/RecipientMpduHandler.h"
 #include "inet/linklayer/ieee80211/mac/recipient/RecipientQoSMpduHandler.h"
 #include "inet/physicallayer/contract/packetlevel/IRadio.h"
-#include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h" //TODO not needed here
-#include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h" //TODO not needed here
 
 namespace inet {
 namespace ieee80211 {
 
 using namespace physicallayer;
 
-class IUpperMacContext;
 class IContention;
 class IRx;
 class Ieee80211Frame;
-
 
 /**
  * Implements the IEEE 802.11 MAC. The features, standards compliance and
@@ -61,7 +50,7 @@ class Ieee80211Frame;
 class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
 {
   protected:
-    MACAddress address; // only because createInterfaceEntry() needs it
+    MACAddress address;
 
     IRx *rx = nullptr;
     ITx *tx = nullptr;
@@ -117,8 +106,8 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     bool isSentByUs(Ieee80211Frame *frame) const;
     bool isQoSFrame(Ieee80211Frame *frame) const;
 
-    virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame);
-    virtual void lowerFrameReceived(Ieee80211Frame *frame);
+    virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame);
+    virtual void processLowerFrame(Ieee80211Frame *frame);
 
   public:
     Ieee80211Mac();
