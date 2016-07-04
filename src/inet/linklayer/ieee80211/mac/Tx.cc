@@ -41,13 +41,14 @@ Tx::~Tx()
 void Tx::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
+        mac = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this));
         endIfsTimer = new cMessage("endIFS");
         rx = dynamic_cast<IRx *>(getModuleByPath(par("rxModule")));
         // statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
         WATCH(transmitting);
     }
     if (stage == INITSTAGE_LINK_LAYER) {
-        address = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this))->getAddress();
+        address = mac->getAddress();
         updateDisplayString();
     }
 }

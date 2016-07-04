@@ -33,11 +33,11 @@ network MacTest
         }
         srvHost: WirelessHost {
             parameters:
-                @display("r=,,#707070");
+                @display("r=,,#707070;p=589,111");
         }
         cliHost: WirelessHost {
             parameters:
-                @display("r=,,#707070");
+                @display("r=,,#707070;p=349,111");
         }
         radioMedium: Ieee80211ScalarRadioMedium {
             parameters:

@@ -25,8 +25,7 @@
 namespace inet {
 namespace ieee80211 {
 
-class IUpperMac;
-class IMacRadioInterface;
+class Ieee80211Mac;
 class IRx;
 class IStatistics;
 
@@ -38,7 +37,7 @@ class INET_API Tx : public cSimpleModule, public ITx
     protected:
         MACAddress address = MACAddress::UNSPECIFIED_ADDRESS;
         ITx::ICallback *txCallback = nullptr;
-        IMacRadioInterface *mac = nullptr;
+        Ieee80211Mac *mac = nullptr;
         IRx *rx = nullptr;
         IStatistics *statistics = nullptr;
         Ieee80211Frame *frame = nullptr;

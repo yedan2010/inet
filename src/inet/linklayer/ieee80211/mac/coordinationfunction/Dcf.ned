@@ -40,6 +40,7 @@ module Dcf
         *.difsTime = difsTime;
         *.rateSelectionModule = "^." + rateSelectionModule;
         *.rxModule = "^." + rxModule;
+        *.txModule = "^." + txModule;
         *.originatorMacDataServiceModule = "^.originatorMacDataService";
         *.recipientDataServiceModule = "^.recipientMacDataService";
 
