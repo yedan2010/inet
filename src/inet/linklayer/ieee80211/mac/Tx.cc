@@ -53,7 +53,7 @@ void Tx::initialize(int stage)
 
 void Tx::transmitFrame(Ieee80211Frame *frame, ITx::ICallback *txCallback)
 {
-    transmitFrame(frame, SIMTIME_ZERO, txCallback); //TODO make dedicated version, without the timer
+    transmitFrame(frame, SIMTIME_ZERO, txCallback);
 }
 
 void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback)
