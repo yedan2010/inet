@@ -36,6 +36,7 @@ class IStatistics;
 class INET_API Tx : public cSimpleModule, public ITx
 {
     protected:
+        MACAddress address;
         ITx::ICallback *txCallback = nullptr;
         IMacRadioInterface *mac;
         IRx *rx;
@@ -46,7 +47,8 @@ class INET_API Tx : public cSimpleModule, public ITx
         bool transmitting = false;
 
     protected:
-        virtual void initialize() override;
+        virtual int numInitStages() const override { return NUM_INIT_STAGES; }
+        virtual void initialize(int stage) override;
         virtual void handleMessage(cMessage *msg) override;
         virtual void updateDisplayString();
 

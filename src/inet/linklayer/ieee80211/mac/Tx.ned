@@ -28,8 +28,6 @@ import inet.linklayer.ieee80211.mac.contract.ITx;
 simple Tx like ITx
 {
     parameters:
-        string macModule;
-        string upperMacModule;
         string rxModule;
         string statisticsModule;
         @display("i=block/downarrow");

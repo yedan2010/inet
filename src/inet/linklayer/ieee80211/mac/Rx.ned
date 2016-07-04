@@ -28,7 +28,6 @@ import inet.linklayer.ieee80211.mac.contract.IRx;
 simple Rx like IRx
 {
     parameters:
-        string upperMacModule;
         string statisticsModule;
         @display("i=block/uparrow");
 }

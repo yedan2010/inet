@@ -32,7 +32,7 @@ Define_Module(BasicRateSelection);
 void BasicRateSelection::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        getContainingNode(this)->subscribe(NF_MODESET_CHANGED, this); // TODO: getContainingNic
+        getContainingNicModule(this)->subscribe(NF_MODESET_CHANGED, this);
     }
     else if (stage == INITSTAGE_LINK_LAYER_2) {
         double controlBitrate = par("controlBitrate");

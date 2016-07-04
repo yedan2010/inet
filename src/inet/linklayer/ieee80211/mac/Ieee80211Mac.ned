@@ -97,6 +97,7 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
         string rateControlModuleType = default("");
         string modeSet @enum("a","b","g","n","p") = default("g");
 
+        *.macModule = "^";
         *.rxModule = "^.rx";
         *.txModule = "^.tx";
         *.rateSelectionModule = "^.rateSelection";

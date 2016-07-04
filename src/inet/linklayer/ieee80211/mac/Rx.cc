@@ -41,9 +41,6 @@ Rx::~Rx()
 void Rx::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        auto mac = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this));
-        address = mac->getAddress();
-        //    statistics = check_and_cast<IStatistics *>(getModuleByPath(par("statisticsModule")));
         endNavTimer = new cMessage("NAV");
         WATCH(address);
         WATCH(receptionState);
@@ -51,6 +48,8 @@ void Rx::initialize(int stage)
         WATCH(mediumFree);
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
+        // statistics = check_and_cast<IStatistics *>(getModuleByPath(par("statisticsModule")));
+        address = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this))->getAddress();
         recomputeMediumFree();
     }
 }

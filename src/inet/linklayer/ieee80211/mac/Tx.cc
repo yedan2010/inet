@@ -17,10 +17,12 @@
 // Author: Andras Varga
 //
 
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/IStatistics.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/Tx.h"
 
 namespace inet {
@@ -35,15 +37,18 @@ Tx::~Tx()
         delete frame;
 }
 
-void Tx::initialize()
+void Tx::initialize(int stage)
 {
-    mac = dynamic_cast<IMacRadioInterface *>(getModuleByPath(par("macModule")));
-    rx = dynamic_cast<IRx *>(getModuleByPath(par("rxModule")));
-//    statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
-    endIfsTimer = new cMessage("endIFS");
-
-    WATCH(transmitting);
-    updateDisplayString();
+    if (stage == INITSTAGE_LOCAL) {
+        endIfsTimer = new cMessage("endIFS");
+        rx = dynamic_cast<IRx *>(getModuleByPath(par("rxModule")));
+        // statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
+        WATCH(transmitting);
+    }
+    if (stage == INITSTAGE_LINK_LAYER) {
+        address = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this))->getAddress();
+        updateDisplayString();
+    }
 }
 
 void Tx::transmitFrame(Ieee80211Frame *frame, ITx::ICallback *txCallback)
