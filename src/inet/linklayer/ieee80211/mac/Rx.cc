@@ -21,7 +21,6 @@
 #include "inet/linklayer/ieee80211/mac/contract/IContention.h"
 #include "inet/linklayer/ieee80211/mac/contract/IStatistics.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/Rx.h"
 
@@ -44,7 +43,6 @@ void Rx::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         auto mac = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this));
         address = mac->getAddress();
-        upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
         //    statistics = check_and_cast<IStatistics *>(getModuleByPath(par("statisticsModule")));
         endNavTimer = new cMessage("NAV");
         WATCH(address);
@@ -67,7 +65,7 @@ void Rx::handleMessage(cMessage *msg)
         throw cRuntimeError("Unexpected self message");
 }
 
-void Rx::lowerFrameReceived(Ieee80211Frame *frame)
+bool Rx::lowerFrameReceived(Ieee80211Frame *frame)
 {
     Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
     take(frame);
@@ -79,7 +77,7 @@ void Rx::lowerFrameReceived(Ieee80211Frame *frame)
         if (frame->getReceiverAddress() != address)
             setOrExtendNav(frame->getDuration());
 //        statistics->frameReceived(frame);
-        upperMac->lowerFrameReceived(frame);
+        return true;
     }
     else {
         EV_INFO << "Received an erroneous frame from PHY, dropping it." << std::endl;
@@ -87,6 +85,7 @@ void Rx::lowerFrameReceived(Ieee80211Frame *frame)
         for (auto contention : contentions)
             contention->corruptedFrameReceived();
 //        statistics->erroneousFrameReceived();
+        return false;
     }
 }
 

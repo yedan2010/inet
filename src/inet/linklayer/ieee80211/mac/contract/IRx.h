@@ -64,7 +64,7 @@ class INET_API IRx
         virtual void receptionStateChanged(IRadio::ReceptionState state) = 0;
         virtual void transmissionStateChanged(IRadio::TransmissionState state) = 0;
         virtual void receivedSignalPartChanged(IRadioSignal::SignalPart part) = 0;
-        virtual void lowerFrameReceived(Ieee80211Frame *frame) = 0;
+        virtual bool lowerFrameReceived(Ieee80211Frame *frame) = 0;
 };
 
 } // namespace ieee80211

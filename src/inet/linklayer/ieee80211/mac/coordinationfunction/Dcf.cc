@@ -20,6 +20,7 @@
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Dcf.h"
 #include "inet/linklayer/ieee80211/mac/duplicatedetector/LegacyDuplicateDetector.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/DcfFs.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/lifetime/DcfTransmitLifetimeHandler.h"
 #include "inet/linklayer/ieee80211/mac/originator/OriginatorMpduHandler.h"
 

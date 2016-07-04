@@ -27,7 +27,6 @@
 namespace inet {
 namespace ieee80211 {
 
-class IUpperMac;
 class ITx;
 class IContention;
 class IStatistics;
@@ -38,7 +37,6 @@ class IStatistics;
 class INET_API Rx : public cSimpleModule, public IRx
 {
     protected:
-        IUpperMac *upperMac = nullptr;
         std::vector<IContention *> contentions;
         IStatistics *statistics = nullptr;
 
@@ -68,7 +66,7 @@ class INET_API Rx : public cSimpleModule, public IRx
         virtual void receptionStateChanged(IRadio::ReceptionState newReceptionState) override;
         virtual void transmissionStateChanged(IRadio::TransmissionState transmissionState) override;
         virtual void receivedSignalPartChanged(IRadioSignal::SignalPart part) override;
-        virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
+        virtual bool lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void frameTransmitted(simtime_t durationField) override;
         virtual void registerContention(IContention *contention) override;
 };

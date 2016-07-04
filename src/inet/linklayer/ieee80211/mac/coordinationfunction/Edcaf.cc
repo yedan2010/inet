@@ -20,6 +20,7 @@
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Edcaf.h"
 #include "inet/linklayer/ieee80211/mac/duplicatedetector/QosDuplicateDetector.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/HcfFs.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/lifetime/EdcaTransmitLifetimeHandler.h"
 #include "inet/linklayer/ieee80211/mac/originator/OriginatorQoSMpduHandler.h"
 

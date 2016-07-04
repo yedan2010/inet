@@ -20,7 +20,6 @@
 #include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/IStatistics.h"
-#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/mac/Tx.h"
 

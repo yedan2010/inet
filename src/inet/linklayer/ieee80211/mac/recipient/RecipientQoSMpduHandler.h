@@ -18,7 +18,6 @@
 
 #include "inet/linklayer/ieee80211/mac/contract/IRecipientMpduHandler.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/originator/OriginatorBlockAckAgreementHandler.h"
 #include "inet/linklayer/ieee80211/mac/recipient/AckProcedure.h"
 #include "inet/linklayer/ieee80211/mac/recipient/BlockAckProcedure.h"
@@ -28,6 +27,8 @@
 
 namespace inet {
 namespace ieee80211 {
+
+class Ieee80211Mac;
 
 class INET_API RecipientQoSMpduHandler : public IRecipientMpduHandler, public ITx::ICallback, public cSimpleModule
 {

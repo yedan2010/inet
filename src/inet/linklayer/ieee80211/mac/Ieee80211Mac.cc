@@ -26,7 +26,6 @@
 #include "inet/linklayer/ieee80211/mac/contract/IFrameSequence.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/contract/IUpperMac.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
@@ -66,7 +65,6 @@ void Ieee80211Mac::initialize(int stage)
         radioModule->subscribe(IRadio::receivedSignalPartChangedSignal, this);
         radio = check_and_cast<IRadio *>(radioModule);
 
-        upperMac = check_and_cast<IUpperMac *>(getSubmodule("upperMac"));
         rx = check_and_cast<IRx *>(getSubmodule("rx"));
         tx = check_and_cast<ITx *>(getSubmodule("tx"));
 
@@ -88,6 +86,19 @@ void Ieee80211Mac::initialize(int stage)
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
         if (isInterfaceRegistered().isUnspecified())    //TODO do we need multi-MAC feature? if so, should they share interfaceEntry??  --Andras
             registerInterface();
+    }
+    else if (stage == INITSTAGE_LINK_LAYER_2) {
+        rateControl = dynamic_cast<IRateControl *>(getModuleByPath(par("rateControlModule"))); // optional module
+        rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
+        recipientMpduHandler = check_and_cast<RecipientMpduHandler *>(getSubmodule("dcf")->getSubmodule("recipientMpduHandler"));
+        recipientQosMpduHandler = check_and_cast<RecipientQoSMpduHandler *>(getSubmodule("edca")->getSubmodule("recipientQoSMpduHandler"));
+        rateSelection->setRateControl(rateControl);
+        rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
+        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
+        dcf = check_and_cast<Dcf *>(getSubmodule("dcf"));
+        //pcf = new Pcf();
+        hcf = new Hcf(check_and_cast<Edca*>(getSubmodule("edca")), nullptr); // TODO: nullptr -> check_and_cast<Hcca*>(getSubmodule("Hcca"))
+        //mcf = new Mcf();
     }
 }
 
@@ -134,12 +145,15 @@ void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 
 void Ieee80211Mac::handleUpperPacket(cPacket *msg)
 {
-    upperMac->upperFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
+    upperFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
 }
 
 void Ieee80211Mac::handleLowerPacket(cPacket *msg)
 {
-    rx->lowerFrameReceived(check_and_cast<Ieee80211Frame *>(msg));
+    auto frame = check_and_cast<Ieee80211Frame *>(msg);
+    if (rx->lowerFrameReceived(frame)) {
+        lowerFrameReceived(frame);
+    }
 }
 
 void Ieee80211Mac::handleUpperCommand(cMessage *msg)
@@ -236,6 +250,63 @@ void Ieee80211Mac::sendDownPendingRadioConfigMsg()
         sendDown(pendingRadioConfigMsg);
         pendingRadioConfigMsg = NULL;
     }
+}
+
+bool Ieee80211Mac::isForUs(Ieee80211Frame *frame) const
+{
+    return frame->getReceiverAddress() == getAddress() || (frame->getReceiverAddress().isMulticast() && !isSentByUs(frame));
+}
+
+bool Ieee80211Mac::isSentByUs(Ieee80211Frame *frame) const
+{
+    if (auto dataOrMgmtFrame = dynamic_cast<Ieee80211DataOrMgmtFrame *>(frame))
+        return dataOrMgmtFrame->getAddress3() == getAddress();
+    else
+        return false;
+}
+
+void Ieee80211Mac::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+{
+    Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
+    take(frame);
+    EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << "\n";
+    ASSERT(!frame->getReceiverAddress().isUnspecified());
+    if (frame->getType() == ST_DATA)
+        dcf->upperFrameReceived(frame);
+    else if (frame->getType() == ST_DATA_WITH_QOS)
+        hcf->upperFrameReceived(frame);
+    else
+        throw cRuntimeError("Unknown frame type");
+}
+
+bool Ieee80211Mac::isQoSFrame(Ieee80211Frame* frame) const
+{
+    bool categoryThreeActionFrame = false;
+    if (auto actionFrame = dynamic_cast<Ieee80211ActionFrame*>(frame)) {
+        categoryThreeActionFrame = actionFrame->getCategory() == 3;
+    }
+    return frame->getType() == ST_DATA_WITH_QOS || frame->getType() == ST_BLOCKACK ||
+           frame->getType() == ST_BLOCKACK_REQ || categoryThreeActionFrame;
+}
+
+void Ieee80211Mac::lowerFrameReceived(Ieee80211Frame* frame)
+{
+    Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
+    delete frame->removeControlInfo(); // TODO
+    take(frame);
+    if (!isForUs(frame)) {
+        EV_INFO << "This frame is not for us\n";
+        delete frame;
+    }
+    // TODO: collision controller
+    else if (dcf->isSequenceRunning())
+        dcf->lowerFrameReceived(frame);
+    else if (hcf->isSequenceRunning())
+        hcf->lowerFrameReceived(frame);
+    else if (isQoSFrame(frame))
+        recipientQosMpduHandler->processReceivedFrame(frame);
+    else
+        recipientMpduHandler->processReceivedFrame(frame);
 }
 
 // TODO: revise this

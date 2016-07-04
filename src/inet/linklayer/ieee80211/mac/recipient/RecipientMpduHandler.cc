@@ -14,6 +14,7 @@
 // 
 
 #include "RecipientMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 
 namespace inet {
 namespace ieee80211 {

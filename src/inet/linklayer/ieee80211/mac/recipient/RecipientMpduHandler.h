@@ -18,15 +18,15 @@
 
 #include "inet/linklayer/ieee80211/mac/contract/IRecipientMpduHandler.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/lifetime/DcfReceiveLifetimeHandler.h"
 #include "inet/linklayer/ieee80211/mac/recipient/AckProcedure.h"
 #include "inet/linklayer/ieee80211/mac/recipient/CtsProcedure.h"
 #include "inet/linklayer/ieee80211/mac/recipient/RecipientMacDataService.h"
 
-
 namespace inet {
 namespace ieee80211 {
+
+class Ieee80211Mac;
 
 class INET_API RecipientMpduHandler : public IRecipientMpduHandler, public ITx::ICallback, public cSimpleModule
 {

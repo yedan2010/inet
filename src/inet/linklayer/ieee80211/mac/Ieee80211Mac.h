@@ -28,7 +28,16 @@
 #include "inet/common/INETDefs.h"
 #include "inet/linklayer/base/MACProtocolBase.h"
 #include "inet/linklayer/ieee80211/mac/contract/IMacRadioInterface.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRateControl.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/Dcf.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcf.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/Mcf.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/Pcf.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientQoSMpduHandler.h"
 #include "inet/physicallayer/contract/packetlevel/IRadio.h"
 #include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h" //TODO not needed here
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h" //TODO not needed here
@@ -41,7 +50,6 @@ using namespace physicallayer;
 class IUpperMacContext;
 class IContention;
 class IRx;
-class IUpperMac;
 class Ieee80211Frame;
 
 
@@ -55,13 +63,24 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
   protected:
     MACAddress address; // only because createInterfaceEntry() needs it
 
-    IUpperMac *upperMac = nullptr;
     IRx *rx = nullptr;
     ITx *tx = nullptr;
     IContention **contention = nullptr;  // nullptr-terminated pointer array
     IRadio *radio = nullptr;
     const Ieee80211ModeSet *modeSet = nullptr;
     IRadio::TransmissionState transmissionState = IRadio::TransmissionState::TRANSMISSION_STATE_UNDEFINED;
+
+    IRateControl *rateControl = nullptr;
+    IRateSelection *rateSelection = nullptr;
+
+    Dcf *dcf = nullptr;
+    Pcf *pcf = nullptr;
+    Hcf *hcf = nullptr;
+    Mcf *mcf = nullptr;
+
+    RecipientQoSMpduHandler *recipientQosMpduHandler = nullptr;
+    RecipientMpduHandler *recipientMpduHandler = nullptr;
+
 
     // The last change channel message received and not yet sent to the physical layer, or NULL.
     cMessage *pendingRadioConfigMsg = nullptr;
@@ -94,6 +113,13 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     virtual bool handleNodeShutdown(IDoneCallback *doneCallback) override;
     virtual void handleNodeCrash() override;
 
+    bool isForUs(Ieee80211Frame *frame) const;
+    bool isSentByUs(Ieee80211Frame *frame) const;
+    bool isQoSFrame(Ieee80211Frame *frame) const;
+
+    virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame);
+    virtual void lowerFrameReceived(Ieee80211Frame *frame);
+
   public:
     Ieee80211Mac();
     virtual ~Ieee80211Mac();
@@ -104,10 +130,10 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     virtual void sendDownPendingRadioConfigMsg() override;
 
     virtual void setAddressAndTransmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITx::ICallback *txCallback);
+
 };
 
 } // namespace ieee80211
 } // namespace inet
 
 #endif
-

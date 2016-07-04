@@ -24,13 +24,14 @@
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITransmitLifetimeHandler.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Queue.h"
 #include "inet/linklayer/ieee80211/mac/InProgressFrames.h"
 #include "inet/linklayer/ieee80211/mac/originator/AckHandler.h"
 
 namespace inet {
 namespace ieee80211 {
+
+class Ieee80211Mac;
 
 /**
  * Base class for IEEE 802.11 Channel Access Functions.
