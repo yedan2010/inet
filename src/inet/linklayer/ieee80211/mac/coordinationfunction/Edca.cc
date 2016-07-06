@@ -46,7 +46,7 @@ Edcaf* Edca::getActiveEdcaf()
     return nullptr;
 }
 
-void Edca::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void Edca::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     AccessCategory ac = classifyFrame(frame);
     edcafs[ac]->processUpperFrame(frame);
@@ -65,7 +65,7 @@ Tid Edca::getTid(Ieee80211DataOrMgmtFrame* frame)
         throw cRuntimeError("Unknown frame type = %d", frame->getType());
 }
 
-void Edca::lowerFrameReceived(Ieee80211Frame* frame)
+void Edca::processLowerFrame(Ieee80211Frame* frame)
 {
     getActiveEdcaf()->processLowerFrame(frame);
 }
@@ -90,3 +90,4 @@ AccessCategory Edca::mapTidToAc(Tid tid)
 
 } // namespace ieee80211
 } // namespace inet
+

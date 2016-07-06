@@ -18,6 +18,7 @@
 package inet.linklayer.ieee80211.mac;
 
 import inet.linklayer.ieee80211.IIeee80211Mac;
+import inet.linklayer.ieee80211.mac.contract.ICollisionController;
 import inet.linklayer.ieee80211.mac.contract.IRateControl;
 import inet.linklayer.ieee80211.mac.contract.IRateSelection;
 import inet.linklayer.ieee80211.mac.contract.IRx;
@@ -132,18 +133,21 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
                 @display("p=100,500");
         }
         dcf: Dcf {
-            @display("p=162,106");
+            @display("p=285,222");
         }
         edca: Edca {
-            @display("p=278,106;i=block/queue");
+            @display("p=400,222;i=block/queue");
+        }
+        collisionController: <default("CollisionController")> like ICollisionController {
+            @display("p=100,222");
         }
         rx: <default("Rx")> like IRx {
             parameters:
-                @display("p=300,400");
+                @display("p=285,347");
         }
         tx: <default("Tx")> like ITx {
             parameters:
-                @display("p=400,400");
+                @display("p=400,347");
         }
 }
 

@@ -55,9 +55,6 @@ module Edca
         foos[numFoos]: Foo {
             @display("p=350,139");
         }
-        ctrl: <default("CollisionController")> like ICollisionController { // TODO: move to uppermac
-            @display("p=350,61");
-        }
         recipientQoSMpduHandler: RecipientQoSMpduHandler {
             @display("p=350,212;i=block/dispatch");
         }

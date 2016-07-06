@@ -19,7 +19,7 @@
 #ifndef __INET_EDCAF_H
 #define __INET_EDCAF_H
 
-#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
+#include "inet/linklayer/ieee80211/mac/contract/IContentionBasedChannelAccess.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/CafBase.h"
 
 namespace inet {
@@ -28,9 +28,11 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Enhanced Distributed Channel Access Function.
  */
-class INET_API Edcaf : public CafBase, public ICoordinationFunction, public IContention::ICallback
+class INET_API Edcaf : public IContentionBasedChannelAccess
 {
     protected:
+        CafBase *cafBase = nullptr; // FIXME
+        IContention *contention = nullptr;
         AccessCategory ac = AccessCategory(-1);
         simtime_t txopLimit = -1;
 
@@ -46,6 +48,7 @@ class INET_API Edcaf : public CafBase, public ICoordinationFunction, public ICon
     public:
         virtual void channelAccessGranted() override;
         virtual void internalCollision() override;
+        virtual void transmissionGranted() override;
 
         virtual AccessCategory getAccessCategory() { return ac; }
 };

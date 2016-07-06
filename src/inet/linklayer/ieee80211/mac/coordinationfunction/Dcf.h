@@ -1,4 +1,6 @@
 //
+// Copyright (C) 2016 OpenSim Ltd.
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +27,7 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Distributed Coordination Function.
  */
-class INET_API Dcf : public CafBase, public ICoordinationFunction, public IContention::ICallback
+class INET_API Dcf : public ICoordinationFunction
 {
     protected:
         virtual int numInitStages() const override {return NUM_INIT_STAGES;}

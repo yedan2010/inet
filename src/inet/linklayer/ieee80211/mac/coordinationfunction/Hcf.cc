@@ -28,14 +28,29 @@ Hcf::Hcf(Edca *edca, Hcca *hcca)
     this->hcca = hcca;
 }
 
-void Hcf::upperFrameReceived(Ieee80211DataOrMgmtFrame* frame)
+void Hcf::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
-    edca->upperFrameReceived(frame);
+    edca->processUpperFrame(frame);
 }
 
-void Hcf::lowerFrameReceived(Ieee80211Frame* frame)
+void Hcf::processLowerFrame(Ieee80211Frame* frame)
 {
-    edca->lowerFrameReceived(frame);
+    edca->processUpperFrame(frame);
+}
+
+void Hcf::channelAccessGranted(IContentionBasedChannelAccess* channelAccess)
+{
+    edca->channelAccessGranted(channelAccess);
+}
+
+void Hcf::internalCollision(IContentionBasedChannelAccess* channelAccess)
+{
+    edca->internalCollision(channelAccess);
+}
+
+void Hcf::channelAccessGranted(IContentionFreeChannelAccess* channelAccess)
+{
+    throw cRuntimeError("Hcca is unimplemented!");
 }
 
 } // namespace ieee80211

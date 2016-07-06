@@ -16,6 +16,7 @@
 #ifndef __INET_HCF_H
 #define __INET_HCF_H
 
+#include "inet/linklayer/ieee80211/mac/contract/IHybridCoordinationFunction.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Edca.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcca.h"
 
@@ -25,7 +26,7 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Hybrid Coordination Function.
  */
-class INET_API Hcf : public ICoordinationFunction
+class INET_API Hcf : public IHybridCoordinationFunction
 {
     protected:
         Edca *edca = nullptr;
@@ -35,8 +36,9 @@ class INET_API Hcf : public ICoordinationFunction
         Hcf(Edca *edca, Hcca *hcca);
 
         virtual bool isSequenceRunning() { return edca->isSequenceRunning(); }
-        virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame);
-        virtual void lowerFrameReceived(Ieee80211Frame *frame);
+
+        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame) override;
+        virtual void processLowerFrame(Ieee80211Frame *frame) override;
 };
 
 } /* namespace ieee80211 */

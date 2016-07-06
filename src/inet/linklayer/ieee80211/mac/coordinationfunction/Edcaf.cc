@@ -33,12 +33,10 @@ inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
 
 void Edcaf::initialize(int stage)
 {
-    CafBase::initialize(stage);
     if (stage == INITSTAGE_LINK_LAYER) {
-        contentionCallback = this;
+        contention = check_and_cast<IContention *>(getSubmodule("contention"));
         ac = getAccessCategory(par("accessCategory"));
         originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getModuleByPath(par("originatorMpduHandlerModule")));
-        contention->setTxIndex(ac + 1); // TODO
     }
     else if (stage == INITSTAGE_LAST) {
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
@@ -102,6 +100,19 @@ void Edcaf::channelAccessGranted()
         throw cRuntimeError("Channel access granted while a frame sequence is running");
 }
 
+void Edcaf::internalCollision()
+{
+    // Take the first frame from queue assuming it would have been sent
+    OriginatorQoSMpduHandler *qosMpduHandler = check_and_cast<OriginatorQoSMpduHandler*>(originatorMpduHandler);
+    if (qosMpduHandler->internalCollision())
+        startContention();
+}
+
+void Edcaf::transmissionGranted()
+{
+    contention->transmissionGranted();
+}
+
 AccessCategory Edcaf::getAccessCategory(const char *ac)
 {
     if (strcmp("AC_BK", ac) == 0)
@@ -115,14 +126,6 @@ AccessCategory Edcaf::getAccessCategory(const char *ac)
     throw cRuntimeError("Unknown Access Category = %s", ac);
 }
 
-void Edcaf::internalCollision()
-{
-    // Take the first frame from queue assuming it would have been sent
-    OriginatorQoSMpduHandler *qosMpduHandler = check_and_cast<OriginatorQoSMpduHandler*>(originatorMpduHandler);
-    if (qosMpduHandler->internalCollision())
-        startContention();
-}
 
 } // namespace ieee80211
 } // namespace inet
-

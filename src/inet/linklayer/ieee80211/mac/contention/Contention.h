@@ -42,16 +42,15 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         static simsignal_t stateChangedSignal;
 
     protected:
-        IMacRadioInterface *mac;
-        ICollisionController *collisionController;  // optional
+        IMacRadioInterface *mac = nullptr;
+        IContentionBasedChannelAccess *channelAccess = nullptr;
+        ICollisionController *collisionController = nullptr;  // optional
         cMessage *startTxEvent = nullptr;  // in the absence of collisionController
-        int txIndex = -1;
 
         // current contention's parameters
         simtime_t ifs = SIMTIME_ZERO;
         simtime_t eifs = SIMTIME_ZERO;
         simtime_t slotTime;
-        IContention::ICallback *contentionCallback = nullptr;
 
         cFSM fsm;
         simtime_t endEifsTime = SIMTIME_ZERO;
@@ -67,8 +66,6 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
         virtual void handleMessage(cMessage *msg) override;
-        virtual void transmissionGranted(int txIndex) override; // called back from collision controller
-        virtual void internalCollision(int txIndex) override; // called back from collision controller
 
         virtual void handleWithFSM(EventType event, cMessage *msg);
         virtual void scheduleTransmissionRequest();
@@ -89,9 +86,11 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         virtual void releaseChannel() override;
 
         virtual void mediumStateChanged(bool mediumFree) override;
+        virtual void transmissionGranted() override;
+        virtual void internalCollision() override;
+
         virtual void corruptedFrameReceived() override;
         virtual bool isContentionInProgress() override;
-        virtual void setTxIndex(int txIndex) { this->txIndex = txIndex; }
 };
 
 } // namespace ieee80211

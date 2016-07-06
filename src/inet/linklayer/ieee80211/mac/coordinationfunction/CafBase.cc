@@ -37,7 +37,6 @@ void CafBase::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
         rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
-        contention = check_and_cast<IContention *>(getSubmodule("contention"));
         rx->registerContention(contention);
         endReceptionTimeout = new cMessage("endRxTimeout");
         startReceptionTimeout = new cMessage("startRxTimeout");
@@ -81,6 +80,7 @@ void CafBase::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
     Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
     take(frame);
     originatorMpduHandler->processUpperFrame(frame);
+    // TODO: upperFrameProcessed()
     startContentionIfNecessary();
 }
 
@@ -102,6 +102,7 @@ void CafBase::processLowerFrame(Ieee80211Frame* frame)
         default:
             throw cRuntimeError("Unknown step type");
     }
+    // TODO: lowerFrameProcessed()
 }
 
 void CafBase::transmissionComplete()

@@ -33,11 +33,8 @@
 namespace inet {
 namespace ieee80211 {
 
-class Ieee80211Mac;
-
 /**
  * Base class for IEEE 802.11 Channel Access Functions.
- * FIXME: implement early timeout
  */
 class INET_API CafBase : public cSimpleModule, public ITx::ICallback
 {

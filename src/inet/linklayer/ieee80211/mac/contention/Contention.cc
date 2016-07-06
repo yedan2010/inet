@@ -40,12 +40,10 @@ void Contention::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
         mac = check_and_cast<IMacRadioInterface *>(getContainingNicModule(this));
+        channelAccess = dynamic_cast<IContentionBasedChannelAccess *>(getModuleByPath(par("channelAccessModule")));
         collisionController = dynamic_cast<ICollisionController *>(getModuleByPath(par("collisionControllerModule")));
         backoffOptimization = par("backoffOptimization");
         lastIdleStartTime = simTime() - SimTime::getMaxTime() / 2;
-
-        if (txIndex > 0 && !collisionController)
-            throw cRuntimeError("No collision controller module -- one is needed when multiple Contention instances are present");
 
         if (!collisionController)
             startTxEvent = new cMessage("startTx");
@@ -53,7 +51,6 @@ void Contention::initialize(int stage)
         fsm.setName("fsm");
         fsm.setState(IDLE, "IDLE");
 
-        WATCH(txIndex);
         WATCH(ifs);
         WATCH(eifs);
         WATCH(slotTime);
@@ -78,7 +75,7 @@ Contention::~Contention()
     cancelAndDelete(startTxEvent);
 }
 
-void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContention::ICallback* callback)
+void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw)
 {
     ASSERT(ifs >= 0 && eifs >= 0 && slotTime >= 0 && cw >= 0);
     Enter_Method("startContention()");
@@ -86,7 +83,6 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTi
     this->ifs = ifs;
     this->eifs = eifs;
     this->slotTime = slotTime;
-    this->contentionCallback = callback;
 
     backoffSlots = cw;
     handleWithFSM(START, nullptr);
@@ -173,9 +169,9 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
-        contentionCallback->channelAccessGranted();
+        channelAccess->channelAccessGranted();
     if (finallyReportInternalCollision)
-        contentionCallback->internalCollision();
+        channelAccess->internalCollision();
     if (hasGUI())
         updateDisplayString();
 }
@@ -191,7 +187,7 @@ void Contention::mediumStateChanged(bool mediumFree)
 void Contention::handleMessage(cMessage *msg)
 {
     ASSERT(msg == startTxEvent);
-    transmissionGranted(txIndex);
+    transmissionGranted();
 }
 
 void Contention::corruptedFrameReceived()
@@ -200,13 +196,13 @@ void Contention::corruptedFrameReceived()
     handleWithFSM(CORRUPTED_FRAME_RECEIVED, nullptr);
 }
 
-void Contention::transmissionGranted(int txIndex)
+void Contention::transmissionGranted()
 {
     Enter_Method("transmissionGranted()");
     handleWithFSM(TRANSMISSION_GRANTED, nullptr);
 }
 
-void Contention::internalCollision(int txIndex)
+void Contention::internalCollision()
 {
     Enter_Method("internalCollision()");
     handleWithFSM(INTERNAL_COLLISION, nullptr);
@@ -221,7 +217,7 @@ void Contention::releaseChannel()
 void Contention::scheduleTransmissionRequestFor(simtime_t txStartTime)
 {
     if (collisionController)
-        collisionController->scheduleTransmissionRequest(txIndex, txStartTime, this);
+        collisionController->scheduleTransmissionRequest(channelAccess, txStartTime, this);
     else
         scheduleAt(txStartTime, startTxEvent);
 }
@@ -229,7 +225,7 @@ void Contention::scheduleTransmissionRequestFor(simtime_t txStartTime)
 void Contention::cancelTransmissionRequest()
 {
     if (collisionController)
-        collisionController->cancelTransmissionRequest(txIndex);
+        collisionController->cancelTransmissionRequest(channelAccess);
     else
         cancelEvent(startTxEvent);
 }

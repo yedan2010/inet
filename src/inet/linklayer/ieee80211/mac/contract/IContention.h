@@ -41,25 +41,9 @@ class Ieee80211Frame;
 class INET_API IContention
 {
     public:
-        /**
-         * Contention processes use this interface to notify their callers that channel
-         * access was granted, or suffered an internal collision with a higher priority
-         * process (EDCA).
-         *
-         * @see IContention.
-         */
-        class INET_API ICallback {
-            public:
-                virtual ~ICallback() {}
-
-                virtual void channelAccessGranted() = 0;
-                virtual void internalCollision() = 0;
-        };
-
-    public:
         virtual ~IContention() {}
 
-        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, ICallback *callback) = 0;
+        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw) = 0;
         virtual void releaseChannel() = 0;
         virtual bool isContentionInProgress() = 0;
 
@@ -67,8 +51,8 @@ class INET_API IContention
         virtual void mediumStateChanged(bool mediumFree) = 0;
         virtual void corruptedFrameReceived() = 0;
 
-        // TODO: KLUDGE
-        virtual void setTxIndex(int txIndex) = 0;
+        virtual void internalCollision() = 0;
+        virtual void transmissionGranted() = 0;
 };
 
 } // namespace ieee80211

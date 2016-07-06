@@ -25,6 +25,8 @@
 #include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/CoordinationFunctionNonQoSFacility.h"
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/CoordinationFunctionQoSFacility.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Dcf.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcf.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Mcf.h"
@@ -51,10 +53,10 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
 {
   protected:
     MACAddress address;
+    bool qosSta = true;
 
     IRx *rx = nullptr;
     ITx *tx = nullptr;
-    IContention **contention = nullptr;  // nullptr-terminated pointer array
     IRadio *radio = nullptr;
     const Ieee80211ModeSet *modeSet = nullptr;
     IRadio::TransmissionState transmissionState = IRadio::TransmissionState::TRANSMISSION_STATE_UNDEFINED;
@@ -67,9 +69,8 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     Hcf *hcf = nullptr;
     Mcf *mcf = nullptr;
 
-    RecipientQoSMpduHandler *recipientQosMpduHandler = nullptr;
-    RecipientMpduHandler *recipientMpduHandler = nullptr;
-
+    CoordinationFunctionQoSFacility *coordinationFunctionQoSFacility = nullptr;
+    CoordinationFunctionNonQoSFacility *coordinationFunctionNonQoSFacility = nullptr;
 
     // The last change channel message received and not yet sent to the physical layer, or NULL.
     cMessage *pendingRadioConfigMsg = nullptr;
@@ -104,7 +105,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
 
     bool isForUs(Ieee80211Frame *frame) const;
     bool isSentByUs(Ieee80211Frame *frame) const;
-    bool isQoSFrame(Ieee80211Frame *frame) const;
 
     virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame);
     virtual void processLowerFrame(Ieee80211Frame *frame);

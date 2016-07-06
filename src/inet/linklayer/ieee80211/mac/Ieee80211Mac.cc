@@ -42,7 +42,6 @@ Ieee80211Mac::~Ieee80211Mac()
 {
     if (pendingRadioConfigMsg)
         delete pendingRadioConfigMsg;
-    delete [] contention;
 }
 
 void Ieee80211Mac::initialize(int stage)
@@ -77,8 +76,6 @@ void Ieee80211Mac::initialize(int stage)
     else if (stage == INITSTAGE_LINK_LAYER_2) {
         rateControl = dynamic_cast<IRateControl *>(getSubmodule("rateControl")); // optional module
         rateSelection = check_and_cast<IRateSelection *>(getSubmodule("rateSelection"));
-        recipientMpduHandler = check_and_cast<RecipientMpduHandler *>(getSubmodule("dcf")->getSubmodule("recipientMpduHandler"));
-        recipientQosMpduHandler = check_and_cast<RecipientQoSMpduHandler *>(getSubmodule("edca")->getSubmodule("recipientQoSMpduHandler"));
         rateSelection->setRateControl(rateControl);
         rx = check_and_cast<IRx *>(getSubmodule("rx"));
         tx = check_and_cast<ITx *>(getSubmodule("tx"));
@@ -86,6 +83,10 @@ void Ieee80211Mac::initialize(int stage)
         // TODO: pcf = new Pcf();
         hcf = new Hcf(check_and_cast<Edca*>(getSubmodule("edca")), nullptr); // TODO: nullptr -> check_and_cast<Hcca*>(getSubmodule("Hcca"))
         // TODO: mcf = new Mcf();
+        auto recipientMpduHandler = check_and_cast<RecipientMpduHandler *>(getSubmodule("dcf")->getSubmodule("recipientMpduHandler"));
+        coordinationFunctionNonQoSFacility = new CoordinationFunctionNonQoSFacility(dcf, nullptr, nullptr, recipientMpduHandler);
+        auto recipientQosMpduHandler = check_and_cast<RecipientQoSMpduHandler *>(getSubmodule("edca")->getSubmodule("recipientQoSMpduHandler"));
+        coordinationFunctionQoSFacility = new CoordinationFunctionQoSFacility(dcf, hcf, nullptr, nullptr, recipientMpduHandler, nullptr);
     }
 }
 
@@ -248,22 +249,10 @@ void Ieee80211Mac::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
     take(frame);
     EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << "\n";
     ASSERT(!frame->getReceiverAddress().isUnspecified());
-    if (frame->getType() == ST_DATA)
-        dcf->processUpperFrame(frame);
-    else if (frame->getType() == ST_DATA_WITH_QOS)
-        hcf->upperFrameReceived(frame);
+    if (qosSta)
+        coordinationFunctionQoSFacility->processUpperFrame(frame);
     else
-        throw cRuntimeError("Unknown frame type");
-}
-
-bool Ieee80211Mac::isQoSFrame(Ieee80211Frame* frame) const
-{
-    bool categoryThreeActionFrame = false;
-    if (auto actionFrame = dynamic_cast<Ieee80211ActionFrame*>(frame)) {
-        categoryThreeActionFrame = actionFrame->getCategory() == 3;
-    }
-    return frame->getType() == ST_DATA_WITH_QOS || frame->getType() == ST_BLOCKACK ||
-           frame->getType() == ST_BLOCKACK_REQ || categoryThreeActionFrame;
+        coordinationFunctionNonQoSFacility->processUpperFrame(frame);
 }
 
 void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
@@ -275,15 +264,10 @@ void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
         EV_INFO << "This frame is not for us\n";
         delete frame;
     }
-    // TODO: collision controller
-    else if (dcf->isSequenceRunning())
-        dcf->processLowerFrame(frame);
-    else if (hcf->isSequenceRunning())
-        hcf->lowerFrameReceived(frame);
-    else if (isQoSFrame(frame))
-        recipientQosMpduHandler->processReceivedFrame(frame);
+    if (qosSta)
+        coordinationFunctionQoSFacility->processLowerFrame(frame);
     else
-        recipientMpduHandler->processReceivedFrame(frame);
+        coordinationFunctionNonQoSFacility->processLowerFrame(frame);
 }
 
 // FIXME
