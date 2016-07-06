@@ -71,6 +71,8 @@ class INET_API CafBase : public cSimpleModule, public ITx::ICallback
         virtual void abortFrameSequence();
 
     public:
+        ~CafBase();
+
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame);
         virtual void processLowerFrame(Ieee80211Frame *frame);
         virtual void transmissionComplete() override;

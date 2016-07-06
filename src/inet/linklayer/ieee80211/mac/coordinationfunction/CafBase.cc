@@ -22,10 +22,15 @@
 #include "inet/linklayer/ieee80211/mac/fragmentation/Fragmentation.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceStep.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 
 namespace inet {
 namespace ieee80211 {
+
+CafBase::~CafBase()
+{
+    cancelAndDelete(startReceptionTimeout);
+    cancelAndDelete(endReceptionTimeout);
+}
 
 void CafBase::initialize(int stage)
 {
@@ -41,7 +46,20 @@ void CafBase::initialize(int stage)
 
 void CafBase::handleMessage(cMessage* message)
 {
-    if (message == endReceptionTimeout) {
+    if (message == startReceptionTimeout) {
+        auto lastStep = context->getLastStep();
+        switch (lastStep->getType()) {
+            case IFrameSequenceStep::Type::RECEIVE:
+                if (!rx->isReceptionInProgress())
+                    abortFrameSequence();
+                break;
+            case IFrameSequenceStep::Type::TRANSMIT:
+                throw cRuntimeError("Received timeout while in transmit step");
+            default:
+                throw cRuntimeError("Unknown step type");
+        }
+    }
+    else if (message == endReceptionTimeout) {
         auto lastStep = context->getLastStep();
         switch (lastStep->getType()) {
             case IFrameSequenceStep::Type::RECEIVE:
@@ -115,8 +133,7 @@ void CafBase::startFrameSequenceStep()
 {
     ASSERT(isSequenceRunning());
     auto nextStep = frameSequence->prepareStep(context);
-//    EV_INFO << "Frame sequence history:" << frameSequence->getHistory() << endl;
-
+    // EV_INFO << "Frame sequence history:" << frameSequence->getHistory() << endl;
     if (nextStep == nullptr)
         finishFrameSequence(true);
     else {
@@ -128,16 +145,16 @@ void CafBase::startFrameSequenceStep()
                 // The allowable frame exchange sequence is defined by the rule frame sequence. Except where modified by
                 // the pifs attribute, frames are separated by a SIFS. (G.2 Basic sequences)
                 tx->transmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs(), this);
-//                if (auto dataFrame = dynamic_cast<Ieee80211DataFrame *>(transmitStep->getFrameToTransmit()))
-//                    transmitLifetimeHandler->frameTransmitted(dataFrame);
+                // TODO: lifetime
+                // if (auto dataFrame = dynamic_cast<Ieee80211DataFrame *>(transmitStep->getFrameToTransmit()))
+                //    transmitLifetimeHandler->frameTransmitted(dataFrame);
                 break;
             }
             case IFrameSequenceStep::Type::RECEIVE: {
                 auto receiveStep = static_cast<ReceiveStep *>(nextStep);
-//                FIXME: implement early timeout
-//                simtime_t earlyTimeout = receiveStep->getEarlyTimeout();
-//                if (earlyTimeout != - 1)
-//                    scheduleAt(simTime() + earlyTimeout, startReceptionTimeout);
+                simtime_t earlyTimeout = receiveStep->getEarlyTimeout();
+                if (earlyTimeout != -1)
+                    scheduleAt(simTime() + earlyTimeout, startReceptionTimeout);
                 // start reception timer, break loop if timer expires before reception is over
                 simtime_t expectedDuration = receiveStep->getExpectedDuration();
                 if (expectedDuration != -1) {
@@ -157,7 +174,7 @@ void CafBase::finishFrameSequenceStep()
     ASSERT(isSequenceRunning());
     auto lastStep = context->getLastStep();
     auto stepResult = frameSequence->completeStep(context);
-//    EV_INFO << "Frame sequence history:" << frameSequence->getHistory() << endl;
+    // EV_INFO << "Frame sequence history:" << frameSequence->getHistory() << endl;
     if (!stepResult) {
         lastStep->setCompletion(IFrameSequenceStep::Completion::REJECTED);
         cancelEvent(endReceptionTimeout);
