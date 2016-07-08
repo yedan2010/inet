@@ -16,7 +16,7 @@
 //
 //
 
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Edcaf.h"
+#include "Edcaf.h"
 #include "inet/linklayer/ieee80211/mac/duplicatedetector/QosDuplicateDetector.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/HcfFs.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
@@ -126,6 +126,50 @@ AccessCategory Edcaf::getAccessCategory(const char *ac)
     throw cRuntimeError("Unknown Access Category = %s", ac);
 }
 
+void Edcaf::channelAccessGranted()
+{
+    ASSERT(callback != nullptr);
+    if (!collisionController->isInternalCollision(this)) {
+        callback->channelAccessGranted();
+        owning = true;
+    }
+    contentionInProgress = false;
+}
+
+void Edcaf::releaseChannelAccess(IContentionBasedChannelAccess::ICallback* callback)
+{
+    ASSERT(owning);
+    owning = false;
+    contentionInProgress = false;
+    this->callback = nullptr;
+}
+
+void Edcaf::requestChannelAccess(IContentionBasedChannelAccess::ICallback* callback, int cw)
+{
+    this->callback = callback;
+    if (owning)
+        callback->channelAccessGranted();
+    else if (!contentionInProgress) {
+        contention->startContention(cw);
+        contentionInProgress = true;
+    }
+    else ;
+}
+
+void Edcaf::txStartTimeCalculated(simtime_t txStartTime)
+{
+    collisionController->recordTxStartTime(this, txStartTime);
+}
+
+void Edcaf::txStartTimeCanceled()
+{
+    collisionController->cancelTxStartTime(this);
+}
+
+bool Edcaf::isInternalCollision()
+{
+    return collisionController->isInternalCollision(this);
+}
 
 } // namespace ieee80211
 } // namespace inet

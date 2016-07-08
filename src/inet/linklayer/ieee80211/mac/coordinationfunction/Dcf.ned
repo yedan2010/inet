@@ -51,7 +51,6 @@ module Dcf
         contention: Contention {
             @display("p=210,82");
         }
-        // FIXME: We need a module similar to Edca.
         originatorMacDataService: OriginatorMacDataService {
             @display("p=210,153");
         }

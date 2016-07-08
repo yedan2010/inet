@@ -27,20 +27,14 @@ namespace ieee80211 {
 class INET_API CoordinationFunctionQoSFacility
 {
     protected:
-        Dcf *dcf = nullptr;
         Hcf *hcf = nullptr;
-        Mcf *mcf = nullptr; // TODO: Unimplemented
-        Pcf *pcf = nullptr; // TODO: Unimplemented
 
         ICollisionController *collisionController = nullptr;
         RecipientQoSMpduHandler *recipientMpduHandler = nullptr;
 
     public:
-        CoordinationFunctionQoSFacility(Dcf *dcf, Hcf *hcf, Mcf *mcf, Pcf *pcf, RecipientQoSMpduHandler *recipientMpduHandler, ICollisionController *collisionController) :
-            dcf(dcf),
+        CoordinationFunctionQoSFacility(Hcf *hcf, RecipientQoSMpduHandler *recipientMpduHandler, ICollisionController *collisionController) :
             hcf(hcf),
-            mcf(mcf),
-            pcf(pcf),
             recipientMpduHandler(recipientMpduHandler),
             collisionController(collisionController)
         { }

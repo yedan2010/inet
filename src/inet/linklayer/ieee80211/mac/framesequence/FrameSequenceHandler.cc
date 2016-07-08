@@ -16,40 +16,33 @@
 //
 
 #include "inet/common/INETUtils.h"
-#include "inet/linklayer/ieee80211/mac/aggregation/MsduAggregation.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/CafBase.h"
-#include "inet/linklayer/ieee80211/mac/duplicatedetector/QosDuplicateDetector.h"
-#include "inet/linklayer/ieee80211/mac/fragmentation/Fragmentation.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceStep.h"
 
 namespace inet {
 namespace ieee80211 {
 
-CafBase::~CafBase()
+FrameSequenceHandler::~FrameSequenceHandler()
 {
     cancelAndDelete(startReceptionTimeout);
     cancelAndDelete(endReceptionTimeout);
 }
 
-void CafBase::initialize(int stage)
+void FrameSequenceHandler::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
-        rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
-        rx->registerContention(contention);
         endReceptionTimeout = new cMessage("endRxTimeout");
         startReceptionTimeout = new cMessage("startRxTimeout");
     }
 }
 
-void CafBase::handleMessage(cMessage* message)
+void FrameSequenceHandler::handleMessage(cMessage* message)
 {
     if (message == startReceptionTimeout) {
         auto lastStep = context->getLastStep();
         switch (lastStep->getType()) {
             case IFrameSequenceStep::Type::RECEIVE:
-                if (!rx->isReceptionInProgress())
+                if (!callback->isReceptionInProgress())
                     abortFrameSequence();
                 break;
             case IFrameSequenceStep::Type::TRANSMIT:
@@ -75,18 +68,9 @@ void CafBase::handleMessage(cMessage* message)
         throw cRuntimeError("Unknown message");
 }
 
-void CafBase::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
+void FrameSequenceHandler::processResponse(Ieee80211Frame* frame)
 {
-    Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
-    take(frame);
-    originatorMpduHandler->processUpperFrame(frame);
-    // TODO: upperFrameProcessed()
-    startContentionIfNecessary();
-}
-
-void CafBase::processLowerFrame(Ieee80211Frame* frame)
-{
-    Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
+    Enter_Method("processResponse(\"%s\")", frame->getName());
     auto lastStep = context->getLastStep();
     switch (lastStep->getType()) {
         case IFrameSequenceStep::Type::RECEIVE: {
@@ -102,10 +86,9 @@ void CafBase::processLowerFrame(Ieee80211Frame* frame)
         default:
             throw cRuntimeError("Unknown step type");
     }
-    // TODO: lowerFrameProcessed()
 }
 
-void CafBase::transmissionComplete()
+void FrameSequenceHandler::transmissionComplete()
 {
     Enter_Method("transmissionComplete()");
     if (isSequenceRunning()) {
@@ -115,22 +98,20 @@ void CafBase::transmissionComplete()
     }
 }
 
-void CafBase::startContention()
+void FrameSequenceHandler::startFrameSequence(IFrameSequence *frameSequence, FrameSequenceContext *context)
 {
-    EV_INFO << "Starting the contention\n";
-    int cw = originatorMpduHandler->getCw(); // FIXME: kludge
-    contention->startContention(ifs, eifs, slotTime, cw, contentionCallback);
-}
-
-void CafBase::startContentionIfNecessary()
-{
-    if (!contention->isContentionInProgress())
-        startContention();
+    if (isSequenceRunning()) {
+        this->frameSequence = frameSequence;
+        this->context = context;
+        frameSequence->startSequence(context, 0);
+        startFrameSequenceStep();
+    }
     else
-        EV_INFO << "Contention has already started\n";
+        throw cRuntimeError("Channel access granted while a frame sequence is running");
 }
 
-void CafBase::startFrameSequenceStep()
+
+void FrameSequenceHandler::startFrameSequenceStep()
 {
     ASSERT(isSequenceRunning());
     auto nextStep = frameSequence->prepareStep(context);
@@ -145,7 +126,7 @@ void CafBase::startFrameSequenceStep()
                 EV_INFO << "Transmitting, frame = " << transmitStep->getFrameToTransmit() << "\n";
                 // The allowable frame exchange sequence is defined by the rule frame sequence. Except where modified by
                 // the pifs attribute, frames are separated by a SIFS. (G.2 Basic sequences)
-                tx->transmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs(), this);
+                callback->transmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs());
                 // TODO: lifetime
                 // if (auto dataFrame = dynamic_cast<Ieee80211DataFrame *>(transmitStep->getFrameToTransmit()))
                 //    transmitLifetimeHandler->frameTransmitted(dataFrame);
@@ -170,7 +151,7 @@ void CafBase::startFrameSequenceStep()
     }
 }
 
-void CafBase::finishFrameSequenceStep()
+void FrameSequenceHandler::finishFrameSequenceStep()
 {
     ASSERT(isSequenceRunning());
     auto lastStep = context->getLastStep();
@@ -202,19 +183,17 @@ void CafBase::finishFrameSequenceStep()
     }
 }
 
-void CafBase::finishFrameSequence(bool ok)
+void FrameSequenceHandler::finishFrameSequence(bool ok)
 {
     EV_INFO << (ok ? "Frame sequence finished\n" : "Frame sequence aborted\n");
     delete context;
     delete frameSequence;
     context = nullptr;
     frameSequence = nullptr;
-    contention->releaseChannel();
-    if (originatorMpduHandler->hasFrameToTransmit())
-        startContentionIfNecessary();
+    callback->frameSequenceFinished();
 }
 
-void CafBase::abortFrameSequence()
+void FrameSequenceHandler::abortFrameSequence()
 {
     EV_INFO << "Frame sequence aborted\n";
     auto step = context->getLastStep();

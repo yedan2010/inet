@@ -32,38 +32,57 @@ inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
 
 void Dcf::initialize(int stage)
 {
-    CafBase::initialize(stage);
+    FrameSequenceHandler::initialize(stage);
     if (stage == INITSTAGE_LINK_LAYER_2) {
         originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getSubmodule("originatorMpduHandler"));
-        contentionCallback = this;
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
+        dcfChannelAccess = new DcfChannelAccess(rateSelection);
         const IIeee80211Mode *referenceMode = rateSelection->getSlowestMandatoryMode(); // or any other; slotTime etc must be the same for all modes we use
-        slotTime = referenceMode->getSlotTime();
-        sifs = referenceMode->getSifsTime();
-        ifs = fallback(par("difsTime"), sifs + 2 * slotTime);
-        eifs = sifs + ifs + referenceMode->getDuration(LENGTH_ACK);
-        contention->setTxIndex(0); // FIXME
+        tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
+        rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
+        rx->registerContention(contention);
     }
 }
 
 void Dcf::channelAccessGranted()
 {
-    if (!isSequenceRunning()) {
-        frameSequence = new DcfFs();
-        context = originatorMpduHandler->buildContext();
-        frameSequence->startSequence(context, 0);
-        startFrameSequenceStep();
-    }
-    else
-        throw cRuntimeError("Channel access granted while a frame sequence is running");
+    frameSequenceHandler->startFrameSequence(new DcfFs(), context);
 }
 
-void Dcf::internalCollision()
+void Dcf::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
-    // FIXME: implement this
-    throw cRuntimeError("IMPLEMENT");
+    originatorMpduHandler->processUpperFrame(frame);
+    dcfChannelAccess->requestChannelAccess(this, recoveryProcedure->getCw());
+}
+
+void Dcf::processLowerFrame(Ieee80211Frame* frame)
+{
+    if (frameSequenceHandler->isSequenceRunning())
+        frameSequenceHandler->processResponse(frame);
+    else
+        recipientMpduHandler->processReceivedFrame(frame);
+}
+
+void Dcf::transmitFrame(Ieee80211Frame* frame, simtime_t ifs)
+{
+    tx->transmitFrame(frame, ifs, this);
+}
+
+void Dcf::frameSequenceFinished()
+{
+    if (originatorMpduHandler->hasFrameToTransmit())
+        dcfChannelAccess->requestChannelAccess(this, recoveryProcedure->getCw());
+}
+
+bool Dcf::isReceptionInProgress()
+{
+    return rx->isReceptionInProgress();
+}
+
+bool Dcf::transmissionComplete()
+{
+    frameSequenceHandler->transmissionComplete();
 }
 
 } // namespace ieee80211
 } // namespace inet
-

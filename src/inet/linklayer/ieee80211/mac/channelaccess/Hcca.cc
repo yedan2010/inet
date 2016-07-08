@@ -15,12 +15,10 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Mcf.h"
+#include <channelaccess/Hcca.h>
 
 namespace inet {
 namespace ieee80211 {
-
-Define_Module(Mcf);
 
 } // namespace ieee80211
 } // namespace inet

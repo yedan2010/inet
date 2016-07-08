@@ -17,6 +17,7 @@
 #define __INET_ICONTENTIONFREECHANNELACCESS_H
 
 #include "inet/common/INETDefs.h"
+#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -25,6 +26,10 @@ class INET_API IContentionFreeChannelAccess
 {
     public:
         virtual ~IContentionFreeChannelAccess() { }
+
+        virtual void requestChannelAccess(ICoordinationFunction *coordinationFunction) = 0;
+        virtual void releaseChannelAccess(ICoordinationFunction *coordinationFunction) = 0;
+        virtual void channelAccessGranted() = 0;
 };
 
 } /* namespace ieee80211 */

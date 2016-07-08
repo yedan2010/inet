@@ -28,6 +28,9 @@ class INET_API ICoordinationFunction
 {
     public:
         virtual ~ICoordinationFunction() {}
+
+        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame) = 0;
+        virtual void processLowerFrame(Ieee80211Frame *frame) = 0;
 };
 
 } /* namespace ieee80211 */

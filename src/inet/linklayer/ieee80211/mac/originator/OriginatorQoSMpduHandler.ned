@@ -32,7 +32,5 @@ module OriginatorQoSMpduHandler
         @class("OriginatorQoSMpduHandler");
 
     submodules:
-        recoveryProcedure: RecoveryProcedure {
-            @display("p=166,338");
-        }
+
 }

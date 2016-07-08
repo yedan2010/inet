@@ -34,7 +34,7 @@ class IMacRadioInterface;
 /**
  * The default implementation of IContention.
  */
-class INET_API Contention : public cSimpleModule, public IContention, protected ICollisionController::ICallback
+class INET_API Contention : public cSimpleModule, public IContention
 {
     public:
         enum State { IDLE, DEFER, IFS_AND_BACKOFF, OWNING };
@@ -43,14 +43,12 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
 
     protected:
         IMacRadioInterface *mac = nullptr;
-        IContentionBasedChannelAccess *channelAccess = nullptr;
-        ICollisionController *collisionController = nullptr;  // optional
-        cMessage *startTxEvent = nullptr;  // in the absence of collisionController
+        cMessage *startTxEvent = nullptr;
 
         // current contention's parameters
         simtime_t ifs = SIMTIME_ZERO;
         simtime_t eifs = SIMTIME_ZERO;
-        simtime_t slotTime;
+        simtime_t slotTime = SIMTIME_ZERO;
 
         cFSM fsm;
         simtime_t endEifsTime = SIMTIME_ZERO;

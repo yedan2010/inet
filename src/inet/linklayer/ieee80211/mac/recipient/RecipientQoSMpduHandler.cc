@@ -13,9 +13,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
+#include <channelaccess/Edca.h>
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Edca.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "RecipientQoSMpduHandler.h"
 

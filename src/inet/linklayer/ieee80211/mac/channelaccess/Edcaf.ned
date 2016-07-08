@@ -16,7 +16,7 @@
 //
 //
 
-package inet.linklayer.ieee80211.mac.coordinationfunction;
+package inet.linklayer.ieee80211.mac.channelaccess;
 
 import inet.linklayer.ieee80211.mac.contention.Contention;
 
@@ -28,7 +28,7 @@ module Edcaf
     parameters:
         string accessCategory @enum("AC_BK","AC_BE","AC_VI","AC_VO");
         int aifsn = default(-1);
-        
+
         // composition
         string rateSelectionModule;
         string originatorMpduHandlerModule;

@@ -17,6 +17,7 @@
 #define __INET_ICONTENTIONBASEDCHANNELACCESS_H
 
 #include "inet/common/INETDefs.h"
+#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -24,11 +25,20 @@ namespace ieee80211 {
 class INET_API IContentionBasedChannelAccess
 {
     public:
+        class ICallback
+        {
+            public:
+                virtual ~ICallback() {}
+
+                virtual void channelAccessGranted() = 0;
+        };
+
+    public:
         virtual ~IContentionBasedChannelAccess() { }
 
+        virtual void requestChannelAccess(ICallback *callback, int cw) = 0;
+        virtual void releaseChannelAccess(ICallback *callback) = 0;
         virtual void channelAccessGranted() = 0;
-        virtual void transmissionGranted() = 0;
-        virtual void internalCollision() = 0;
 };
 
 } /* namespace ieee80211 */

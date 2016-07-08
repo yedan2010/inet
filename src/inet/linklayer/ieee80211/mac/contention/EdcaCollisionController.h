@@ -13,8 +13,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __INET_HCFCOLLISIONCONTROLLER_H
-#define __INET_HCFCOLLISIONCONTROLLER_H
+#ifndef __INET_EDCACOLLISIONCONTROLLER_H
+#define __INET_EDCACOLLISIONCONTROLLER_H
 
 #include "inet/linklayer/ieee80211/mac/contract/ICollisionController.h"
 #include "inet/linklayer/ieee80211/mac/contract/IContentionBasedChannelAccess.h"
@@ -22,24 +22,20 @@
 namespace inet {
 namespace ieee80211 {
 
-class INET_API HcfCollisionController : public cSimpleModule, public ICollisionController
+class INET_API EdcaCollisionController : public ICollisionController
 {
     protected:
-        std::map<int, std::pair<IContentionBasedChannelAccess*,cMessage*>> timers;
-        simtime_t timeLastProcessed;
-
-    protected:
-        virtual void handleMessage(cMessage* msg) override;
-        virtual std::string getName(IContentionBasedChannelAccess *channelAccess);
-        virtual int getPriority(IContentionBasedChannelAccess *channelAccess);
-        virtual IContentionBasedChannelAccess* getHighestPriortyChannelAccess();
+        simtime_t txStartTimes[4];
 
     public:
-        virtual void scheduleTransmissionRequest(IContentionBasedChannelAccess *channelAccess, simtime_t txStartTime, ICallback *callback) override;
-        virtual void cancelTransmissionRequest(IContentionBasedChannelAccess *channelAccess) override;
+        EdcaCollisionController();
+
+        virtual void recordTxStartTime(Edcaf *edcaf, simtime_t txStartTime) override;
+        virtual void cancelTxStartTime(Edcaf *edcaf) override;
+        virtual bool isInternalCollision(Edcaf *edcaf) override;
 };
 
 } /* namespace ieee80211 */
 } /* namespace inet */
 
-#endif // ifndef INET_HCFCOLLISIONCONTROLLER_H
+#endif // ifndef INET_EDCACOLLISIONCONTROLLER_H

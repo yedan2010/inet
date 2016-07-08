@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Andras Varga
+// Copyright (C) 2016 OpenSim Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
 
 #ifndef __INET_ICOLLISIONCONTROLLER_H
 #define __INET_ICOLLISIONCONTROLLER_H
@@ -25,18 +23,14 @@
 namespace inet {
 namespace ieee80211 {
 
-/**
- * Abstract interface for collision controllers. A collision controller is
- * used with EDCA, and it detects and reports internal collisions between
- * Contention instances.
- */
 class INET_API ICollisionController
 {
     public:
         virtual ~ICollisionController() {}
 
-        virtual void scheduleTransmissionRequest(IContentionBasedChannelAccess *channelAccess, simtime_t txStartTime, ICallback *callback) = 0;
-        virtual void cancelTransmissionRequest(IContentionBasedChannelAccess *channelAccess) = 0;
+        virtual void recordTxStartTime(IContentionBasedChannelAccess *channelAccess, simtime_t txStartTime) = 0;
+        virtual void cancelTxStartTime(IContentionBasedChannelAccess *channelAccess) = 0;
+        virtual bool isInternalCollision(IContentionBasedChannelAccess *channelAccess) = 0;
 };
 
 } // namespace ieee80211

@@ -1,4 +1,6 @@
 //
+// Copyright (C) 2016 OpenSim Ltd.
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +18,7 @@
 #ifndef __INET_EDCA_H
 #define __INET_EDCA_H
 
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Edcaf.h"
+#include "channelaccess/Edcaf.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -28,6 +30,7 @@ class INET_API Edca : public cSimpleModule
 {
     protected:
         std::vector<Edcaf *> edcafs;
+        ICollisionController *collisionController = nullptr;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES;}
@@ -40,9 +43,9 @@ class INET_API Edca : public cSimpleModule
 
     public:
         virtual bool isSequenceRunning() { return getActiveEdcaf() != nullptr; }
+        virtual bool isInternalCollision(Edcaf *edcaf) override;
 
-        virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame);
-        virtual void processLowerFrame(Ieee80211Frame *frame);
+        virtual const std::vector<Edcaf *>& getEdcafs() { return edcafs; }
 };
 
 } /* namespace ieee80211 */

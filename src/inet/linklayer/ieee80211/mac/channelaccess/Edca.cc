@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Andras Varga
+// Copyright (C) 2016 OpenSim Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
 
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Edca.h"
+#include "Edca.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -86,6 +84,16 @@ AccessCategory Edca::mapTidToAc(Tid tid)
         case 6: case 7: return AC_VO;
         default: throw cRuntimeError("No mapping from TID=%d to AccessCategory (must be in the range 0..7)", tid);
     }
+}
+
+
+void Edca::channelAccessGranted()
+{
+}
+
+bool Edca::isInternalCollision(Edcaf *edcaf)
+{
+
 }
 
 } // namespace ieee80211

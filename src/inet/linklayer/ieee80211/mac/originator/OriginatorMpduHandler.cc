@@ -100,10 +100,5 @@ bool OriginatorMpduHandler::hasFrameToTransmit()
     return !pendingQueue->isEmpty() || inProgressFrames->hasInProgressFrames();
 }
 
-FrameSequenceContext* OriginatorMpduHandler::buildContext()
-{
-    return new FrameSequenceContext(pendingQueue, inProgressFrames, ackProcedure, rtsProcedure, nullptr, nullptr, nullptr, modeSet);
-}
-
 } /* namespace ieee80211 */
 } /* namespace inet */

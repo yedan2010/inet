@@ -16,9 +16,9 @@
 //
 //
 
+#include <channelaccess/Edca.h>
 #include "RecipientBlockAckAgreementHandler.h"
 #include "inet/linklayer/ieee80211/mac/blockack/BlockAckAgreement.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/Edca.h"
 
 namespace inet {
 namespace ieee80211 {

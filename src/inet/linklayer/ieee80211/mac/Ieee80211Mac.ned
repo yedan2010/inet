@@ -18,7 +18,6 @@
 package inet.linklayer.ieee80211.mac;
 
 import inet.linklayer.ieee80211.IIeee80211Mac;
-import inet.linklayer.ieee80211.mac.contract.ICollisionController;
 import inet.linklayer.ieee80211.mac.contract.IRateControl;
 import inet.linklayer.ieee80211.mac.contract.IRateSelection;
 import inet.linklayer.ieee80211.mac.contract.IRx;
@@ -122,32 +121,29 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
     submodules:
         rateSelection: <default("BasicRateSelection")> like IRateSelection {
             parameters:
-                @display("p=100,300");
+                @display("p=100,149");
         }
         rateControl: <rateControlModuleType> like IRateControl if rateControlModuleType != "" {
             parameters:
-                @display("p=100,400");
+                @display("p=100,222");
         }
         statistics: <default("BasicStatistics")> like IStatistics {
             parameters:
-                @display("p=100,500");
+                @display("p=100,308");
         }
         dcf: Dcf {
-            @display("p=285,222");
+            @display("p=285,149");
         }
         edca: Edca {
-            @display("p=400,222;i=block/queue");
-        }
-        collisionController: <default("CollisionController")> like ICollisionController {
-            @display("p=100,222");
+            @display("p=400,149;i=block/queue");
         }
         rx: <default("Rx")> like IRx {
             parameters:
-                @display("p=285,347");
+                @display("p=285,222");
         }
         tx: <default("Tx")> like ITx {
             parameters:
-                @display("p=400,347");
+                @display("p=400,222");
         }
 }
 

@@ -19,8 +19,8 @@
 #ifndef __INET_EDCAF_H
 #define __INET_EDCAF_H
 
+#include <FrameSequenceHandler.h>
 #include "inet/linklayer/ieee80211/mac/contract/IContentionBasedChannelAccess.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/CafBase.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -28,16 +28,26 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Enhanced Distributed Channel Access Function.
  */
-class INET_API Edcaf : public IContentionBasedChannelAccess
+class INET_API Edcaf : public IContentionBasedChannelAccess, public IContention::ICallback
 {
     protected:
-        CafBase *cafBase = nullptr; // FIXME
         IContention *contention = nullptr;
-        AccessCategory ac = AccessCategory(-1);
+        IContentionBasedChannelAccess::ICallback *callback = nullptr;
+        ICollisionController *collisionController = nullptr;
+
+        bool owning = false;
+        bool contentionInProgress = false;
+
+        simtime_t slotTime = -1;
+        simtime_t sifs = -1;
+        simtime_t ifs = -1;
+        simtime_t eifs = -1;
         simtime_t txopLimit = -1;
 
+        AccessCategory ac = AccessCategory(-1);
+
     protected:
-        virtual int numInitStages() const override { return NUM_INIT_STAGES;}
+        virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
 
         AccessCategory getAccessCategory(const char *ac);
@@ -46,11 +56,20 @@ class INET_API Edcaf : public IContentionBasedChannelAccess
         int getCwMin(int aCwMin);// TODO: remove
 
     public:
-        virtual void channelAccessGranted() override;
-        virtual void internalCollision() override;
-        virtual void transmissionGranted() override;
-
         virtual AccessCategory getAccessCategory() { return ac; }
+
+        // IContentionBasedChannelAccess
+        virtual void requestChannelAccess(IContentionBasedChannelAccess::ICallback *callback, int cw) override;
+        virtual void releaseChannelAccess(IContentionBasedChannelAccess::ICallback *callback) override;
+        virtual void channelAccessGranted() override;
+
+        // IContention::ICallback
+        virtual void txStartTimeCalculated(simtime_t txStartTime) override;
+        virtual void txStartTimeCanceled() override;
+
+        // Edcaf
+        virtual bool isOwning() { return owning; }
+        virtual bool isInternalCollision();
 };
 
 } /* namespace ieee80211 */

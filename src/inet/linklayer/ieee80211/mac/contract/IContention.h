@@ -41,6 +41,15 @@ class Ieee80211Frame;
 class INET_API IContention
 {
     public:
+        class ICallback
+        {
+            public:
+                ~ICallback() { }
+
+                virtual void txStartTimeCalculated(simtime_t txStartTime) = 0;
+                virtual void txStartTimeCanceled() = 0;
+        };
+
         virtual ~IContention() {}
 
         virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw) = 0;

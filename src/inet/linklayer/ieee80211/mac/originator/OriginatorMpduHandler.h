@@ -57,9 +57,6 @@ class OriginatorMpduHandler : public IOriginatorMpduHandler, public cSimpleModul
         virtual bool hasFrameToTransmit() override;
 
         virtual FrameSequenceContext* buildContext() override;
-
-        // TODO: kludge
-        virtual int getCw() override { return recoveryProcedure->getCw(); }
 };
 
 } /* namespace ieee80211 */
