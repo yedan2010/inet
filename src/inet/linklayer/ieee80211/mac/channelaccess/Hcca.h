@@ -18,8 +18,7 @@
 #ifndef __INET_HCCA_H
 #define __INET_HCCA_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/linklayer/ieee80211/mac/contract/IContentionFreeChannelAccess.h"
+#include "inet/linklayer/ieee80211/mac/contract/IChannelAccess.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -27,8 +26,14 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Hybrid coordination function (HCF) Controlled Channel Access.
  */
-class INET_API Hcca : public IContentionFreeChannelAccess
+class INET_API Hcca : public IChannelAccess
 {
+    public:
+        virtual bool isOwning();
+
+        virtual void requestChannelAccess(ICallback *callback);
+        virtual void releaseChannelAccess(ICallback *callback);
+        virtual void channelAccessGranted();
 };
 
 } /* namespace ieee80211 */

@@ -25,8 +25,6 @@
 #include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/CoordinationFunctionNonQoSFacility.h"
-#include "inet/linklayer/ieee80211/mac/coordinationfunction/CoordinationFunctionQoSFacility.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Dcf.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcf.h"
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Mcf.h"
@@ -68,9 +66,6 @@ class INET_API Ieee80211Mac : public MACProtocolBase, public IMacRadioInterface
     Pcf *pcf = nullptr;
     Hcf *hcf = nullptr;
     Mcf *mcf = nullptr;
-
-    CoordinationFunctionQoSFacility *coordinationFunctionQoSFacility = nullptr;
-    CoordinationFunctionNonQoSFacility *coordinationFunctionNonQoSFacility = nullptr;
 
     // The last change channel message received and not yet sent to the physical layer, or NULL.
     cMessage *pendingRadioConfigMsg = nullptr;

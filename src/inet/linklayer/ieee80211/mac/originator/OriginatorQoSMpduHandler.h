@@ -69,13 +69,6 @@ class OriginatorQoSMpduHandler : public IOriginatorMpduHandler, public cSimpleMo
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame* frame) override;
         virtual bool hasFrameToTransmit() override;
 
-        // FIXME: Edca
-        virtual bool internalCollision();
-
-        virtual FrameSequenceContext* buildContext() override;
-
-        // TODO: kludge
-        virtual int getCw() override { return recoveryProcedure->getCw(); }
         AccessCategory getAccessCategory(const char *ac);
 };
 

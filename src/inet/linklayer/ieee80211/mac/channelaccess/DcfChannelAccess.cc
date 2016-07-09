@@ -20,34 +20,34 @@ namespace ieee80211 {
 
 DcfChannelAccess::DcfChannelAccess(IRateSelection *rateSelection)
 {
-    slotTime = referenceMode->getSlotTime();
-    sifs = referenceMode->getSifsTime();
-    ifs = fallback(par("difsTime"), sifs + 2 * slotTime);
-    eifs = sifs + ifs + referenceMode->getDuration(LENGTH_ACK);
+    //slotTime = referenceMode->getSlotTime();
+    //sifs = referenceMode->getSifsTime();
+    //ifs = fallback(par("difsTime"), sifs + 2 * slotTime);
+    //eifs = sifs + ifs + referenceMode->getDuration(LENGTH_ACK);
 }
 
 void DcfChannelAccess::channelAccessGranted()
 {
-    ASSERT(coordinationFunction != nullptr);
+    ASSERT(callback != nullptr);
     callback->channelAccessGranted();
     owning = true;
     contentionInProgress = false;
 }
 
-void DcfChannelAccess::releaseChannelAccess(IContentionBasedChannelAccess::ICallback* callback)
+void DcfChannelAccess::releaseChannelAccess(IChannelAccess::ICallback* callback)
 {
     owning = false;
     contentionInProgress = false;
     this->callback = nullptr;
 }
 
-void DcfChannelAccess::requestChannelAccess(IContentionBasedChannelAccess::ICallback* callback, int cw)
+void DcfChannelAccess::requestChannelAccess(IChannelAccess::ICallback* callback)
 {
     this->callback = callback;
     if (owning)
         callback->channelAccessGranted();
     else if (!contentionInProgress) {
-        contention->startContention(cw);
+        contention->startContention(recoveryProcedure->getCw());
         contentionInProgress = true;
     }
     else ;

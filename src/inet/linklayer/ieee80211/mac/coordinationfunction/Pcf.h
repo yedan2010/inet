@@ -19,6 +19,7 @@
 #define __INET_PCF_H
 
 #include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
+#include "inet/linklayer/ieee80211/mac/contract/IChannelAccess.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/PcfFs.h"
 
 namespace inet {
@@ -30,7 +31,7 @@ namespace ieee80211 {
 class INET_API Pcf : public ICoordinationFunction, public cSimpleModule
 {
     protected:
-        IContentionFreeChannelAccess *pcfChannelAccess = nullptr;
+        IChannelAccess *pcfChannelAccess = nullptr;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }

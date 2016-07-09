@@ -20,16 +20,16 @@
 #ifndef __INET_CONTENTION_H
 #define __INET_CONTENTION_H
 
-#include "inet/linklayer/ieee80211/mac/contract/ICollisionController.h"
 #include "inet/linklayer/ieee80211/mac/contract/IContention.h"
+#include "inet/linklayer/ieee80211/mac/contract/IChannelAccess.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/physicallayer/contract/packetlevel/IRadio.h"
+
 
 namespace inet {
 namespace ieee80211 {
 
 using namespace inet::physicallayer;
-
-class IMacRadioInterface;
 
 /**
  * The default implementation of IContention.
@@ -37,12 +37,13 @@ class IMacRadioInterface;
 class INET_API Contention : public cSimpleModule, public IContention
 {
     public:
-        enum State { IDLE, DEFER, IFS_AND_BACKOFF, OWNING };
-        enum EventType { START, MEDIUM_STATE_CHANGED, CORRUPTED_FRAME_RECEIVED, TRANSMISSION_GRANTED, INTERNAL_COLLISION, CHANNEL_RELEASED };
+        enum State { IDLE, DEFER, IFS_AND_BACKOFF };
+        enum EventType { START, MEDIUM_STATE_CHANGED, CORRUPTED_FRAME_RECEIVED, CHANNEL_ACCESS_GRANTED };
         static simsignal_t stateChangedSignal;
 
     protected:
-        IMacRadioInterface *mac = nullptr;
+        Ieee80211Mac *mac = nullptr;
+        ICallback *callback = nullptr;
         cMessage *startTxEvent = nullptr;
 
         // current contention's parameters
@@ -65,7 +66,7 @@ class INET_API Contention : public cSimpleModule, public IContention
         virtual void initialize(int stage) override;
         virtual void handleMessage(cMessage *msg) override;
 
-        virtual void handleWithFSM(EventType event, cMessage *msg);
+        virtual void handleWithFSM(EventType event);
         virtual void scheduleTransmissionRequest();
         virtual void scheduleTransmissionRequestFor(simtime_t txStartTime);
         virtual void cancelTransmissionRequest();
@@ -80,15 +81,10 @@ class INET_API Contention : public cSimpleModule, public IContention
         ~Contention();
 
         //TODO also add a switchToReception() method? because switching takes time, so we dont automatically switch to tx after completing a transmission! (as we may want to transmit immediate frames afterwards)
-        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContention::ICallback *callback) override;
-        virtual void releaseChannel() override;
+        virtual void startContention(int cw) override;
 
         virtual void mediumStateChanged(bool mediumFree) override;
-        virtual void transmissionGranted() override;
-        virtual void internalCollision() override;
-
         virtual void corruptedFrameReceived() override;
-        virtual bool isContentionInProgress() override;
 };
 
 } // namespace ieee80211

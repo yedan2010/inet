@@ -16,7 +16,7 @@
 //
 //
 
-#include <channelaccess/Edca.h>
+#include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcf.h"
 #include "RecipientBlockAckAgreementHandler.h"
 #include "inet/linklayer/ieee80211/mac/blockack/BlockAckAgreement.h"
 
@@ -45,10 +45,10 @@ void RecipientBlockAckAgreementHandler::handleMessage(cMessage* msg)
     for (auto it : blockAckAgreements) {
         auto *agreement = it.second;
         if (agreement->getInactivityTimer() == msg) {
-            auto edca = check_and_cast<Edca*>(getParentModule()); // FIXME: khm
+            auto hcf = check_and_cast<Hcf*>(getParentModule()); // FIXME: khm
             Tid tid = it.first.second;
             MACAddress receiverAddr = it.first.first;
-            edca->upperFrameReceived(buildDelba(receiverAddr, tid, 39)); // FIXME: 39 - TIMEOUT see: Table 8-36—Reason codes
+            hcf->processUpperFrame(buildDelba(receiverAddr, tid, 39)); // FIXME: 39 - TIMEOUT see: Table 8-36—Reason codes
             terminateAgreement(agreement->getBlockAckRecord()->getOriginatorAddress(), agreement->getBlockAckRecord()->getTid());
             return;
         }

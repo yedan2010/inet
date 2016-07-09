@@ -18,7 +18,7 @@
 #ifndef __INET_EDCA_H
 #define __INET_EDCA_H
 
-#include "channelaccess/Edcaf.h"
+#include "Edcaf.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -30,22 +30,20 @@ class INET_API Edca : public cSimpleModule
 {
     protected:
         std::vector<Edcaf *> edcafs;
-        ICollisionController *collisionController = nullptr;
+        IEdcaCollisionController *collisionController = nullptr;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES;}
         virtual void initialize(int stage) override;
 
-        virtual Edcaf *getActiveEdcaf();
-        virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
-        virtual AccessCategory mapTidToAc(Tid tid);
         virtual Tid getTid(Ieee80211DataOrMgmtFrame *frame);
 
     public:
-        virtual bool isSequenceRunning() { return getActiveEdcaf() != nullptr; }
-        virtual bool isInternalCollision(Edcaf *edcaf) override;
+        virtual AccessCategory mapTidToAc(Tid tid);
+        virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
 
-        virtual const std::vector<Edcaf *>& getEdcafs() { return edcafs; }
+        virtual Edcaf *getChannelOwner();
+        virtual std::vector<Edcaf*> getInternallyCollidedEdcafs();
 };
 
 } /* namespace ieee80211 */

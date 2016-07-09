@@ -20,6 +20,21 @@
 
 #include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
 #include "inet/linklayer/ieee80211/mac/contract/IFrameSequenceHandler.h"
+#include "inet/linklayer/ieee80211/mac/channelaccess/DcfChannelAccess.h"
+
+#include "inet/linklayer/ieee80211/mac/InProgressFrames.h"
+#include "inet/linklayer/ieee80211/mac/lifetime/DcfTransmitLifetimeHandler.h"
+#include "inet/linklayer/ieee80211/mac/originator/AckHandler.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorAckProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorMacDataService.h"
+#include "inet/linklayer/ieee80211/mac/originator/RecoveryProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/RtsProcedure.h"
+#include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h"
+
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientMpduHandler.h"
+
 
 namespace inet {
 namespace ieee80211 {
@@ -27,7 +42,7 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Distributed Coordination Function.
  */
-class INET_API Dcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IContentionBasedChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
+class INET_API Dcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
 {
     protected:
         IRx *rx = nullptr;
@@ -67,7 +82,7 @@ class INET_API Dcf : public ICoordinationFunction, public IFrameSequenceHandler:
         virtual bool isReceptionInProgress() override;
 
         // ITx::ICallback
-        virtual bool transmissionComplete() override;
+        virtual void transmissionComplete() override;
 };
 
 } /* namespace ieee80211 */

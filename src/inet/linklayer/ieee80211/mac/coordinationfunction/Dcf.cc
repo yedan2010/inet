@@ -32,15 +32,14 @@ inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
 
 void Dcf::initialize(int stage)
 {
-    FrameSequenceHandler::initialize(stage);
     if (stage == INITSTAGE_LINK_LAYER_2) {
-        originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getSubmodule("originatorMpduHandler"));
+        originatorMpduHandler = check_and_cast<OriginatorMpduHandler *>(getSubmodule("originatorMpduHandler"));
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
         dcfChannelAccess = new DcfChannelAccess(rateSelection);
         const IIeee80211Mode *referenceMode = rateSelection->getSlowestMandatoryMode(); // or any other; slotTime etc must be the same for all modes we use
         tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
         rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
-        rx->registerContention(contention);
+        // rx->registerContention(contention);
     }
 }
 
@@ -52,7 +51,7 @@ void Dcf::channelAccessGranted()
 void Dcf::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
     originatorMpduHandler->processUpperFrame(frame);
-    dcfChannelAccess->requestChannelAccess(this, recoveryProcedure->getCw());
+    dcfChannelAccess->requestChannelAccess(this);
 }
 
 void Dcf::processLowerFrame(Ieee80211Frame* frame)
@@ -71,7 +70,7 @@ void Dcf::transmitFrame(Ieee80211Frame* frame, simtime_t ifs)
 void Dcf::frameSequenceFinished()
 {
     if (originatorMpduHandler->hasFrameToTransmit())
-        dcfChannelAccess->requestChannelAccess(this, recoveryProcedure->getCw());
+        dcfChannelAccess->requestChannelAccess(this);
 }
 
 bool Dcf::isReceptionInProgress()
@@ -79,7 +78,7 @@ bool Dcf::isReceptionInProgress()
     return rx->isReceptionInProgress();
 }
 
-bool Dcf::transmissionComplete()
+void Dcf::transmissionComplete()
 {
     frameSequenceHandler->transmissionComplete();
 }

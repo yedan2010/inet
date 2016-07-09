@@ -19,8 +19,10 @@
 #ifndef __INET_EDCAF_H
 #define __INET_EDCAF_H
 
-#include <FrameSequenceHandler.h>
-#include "inet/linklayer/ieee80211/mac/contract/IContentionBasedChannelAccess.h"
+#include "inet/linklayer/ieee80211/mac/contract/IEdcaCollisionController.h"
+#include "inet/linklayer/ieee80211/mac/contract/IChannelAccess.h"
+#include "inet/linklayer/ieee80211/mac/contract/IContention.h"
+#include "inet/linklayer/ieee80211/mac/originator/RecoveryProcedure.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -28,12 +30,13 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Enhanced Distributed Channel Access Function.
  */
-class INET_API Edcaf : public IContentionBasedChannelAccess, public IContention::ICallback
+class INET_API Edcaf : public IChannelAccess, public IContention::ICallback, public cSimpleModule
 {
     protected:
+        RecoveryProcedure *recoveryProcedure = nullptr;
         IContention *contention = nullptr;
-        IContentionBasedChannelAccess::ICallback *callback = nullptr;
-        ICollisionController *collisionController = nullptr;
+        IChannelAccess::ICallback *callback = nullptr;
+        IEdcaCollisionController *collisionController = nullptr;
 
         bool owning = false;
         bool contentionInProgress = false;
@@ -59,11 +62,11 @@ class INET_API Edcaf : public IContentionBasedChannelAccess, public IContention:
         virtual AccessCategory getAccessCategory() { return ac; }
 
         // IContentionBasedChannelAccess
-        virtual void requestChannelAccess(IContentionBasedChannelAccess::ICallback *callback, int cw) override;
-        virtual void releaseChannelAccess(IContentionBasedChannelAccess::ICallback *callback) override;
-        virtual void channelAccessGranted() override;
+        virtual void requestChannelAccess(IChannelAccess::ICallback *callback) override;
+        virtual void releaseChannelAccess(IChannelAccess::ICallback *callback) override;
 
         // IContention::ICallback
+        virtual void channelAccessGranted() override;
         virtual void txStartTimeCalculated(simtime_t txStartTime) override;
         virtual void txStartTimeCanceled() override;
 

@@ -140,18 +140,6 @@ void OriginatorQoSMpduHandler::processReceivedFrame(Ieee80211Frame* frame, Ieee8
         throw cRuntimeError("Unknown frame type");
 }
 
-bool OriginatorQoSMpduHandler::internalCollision() // TODO: rename or split or move or what?
-{
-    Ieee80211DataOrMgmtFrame *internallyCollidedFrame = inProgressFrames->getFrameToTransmit();
-    recoveryProcedure->dataOrMgmtFrameTransmissionFailed(internallyCollidedFrame);
-    if (recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(internallyCollidedFrame)) {
-        inProgressFrames->dropFrame(internallyCollidedFrame);
-        return false;
-    }
-    return true;
-}
-
-
 s OriginatorQoSMpduHandler::getTxopLimit(const IIeee80211Mode *mode)
 {
     switch (ac)
@@ -185,10 +173,10 @@ bool OriginatorQoSMpduHandler::hasFrameToTransmit()
     return !pendingQueue->isEmpty() || inProgressFrames->hasInProgressFrames();
 }
 
-FrameSequenceContext* OriginatorQoSMpduHandler::buildContext()
-{
-    return new FrameSequenceContext(pendingQueue, inProgressFrames, ackProcedure, rtsProcedure, txopProcedure, blockAckProcedure, originatorBlockAckAgreementHandler, modeSet);
-}
+//FrameSequenceContext* OriginatorQoSMpduHandler::buildContext()
+//{
+//    return new FrameSequenceContext(pendingQueue, inProgressFrames, ackProcedure, rtsProcedure, txopProcedure, blockAckProcedure, originatorBlockAckAgreementHandler, modeSet);
+//}
 
 AccessCategory OriginatorQoSMpduHandler::getAccessCategory(const char *ac)
 {

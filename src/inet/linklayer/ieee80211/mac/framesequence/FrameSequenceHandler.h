@@ -19,6 +19,7 @@
 #define __INET_FRAMESEQUENCEHANDLER_H
 
 #include "inet/linklayer/ieee80211/mac/contract/IFrameSequence.h"
+#include "inet/linklayer/ieee80211/mac/contract/IFrameSequenceHandler.h"
 #include "inet/linklayer/ieee80211/mac/contract/IOriginatorMpduHandler.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITransmitLifetimeHandler.h"
 

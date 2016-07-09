@@ -48,20 +48,16 @@ class INET_API IContention
 
                 virtual void txStartTimeCalculated(simtime_t txStartTime) = 0;
                 virtual void txStartTimeCanceled() = 0;
+                virtual void channelAccessGranted() = 0;
         };
 
         virtual ~IContention() {}
 
-        virtual void startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw) = 0;
-        virtual void releaseChannel() = 0;
-        virtual bool isContentionInProgress() = 0;
+        virtual void startContention(int cw) = 0;
 
         // notifications
         virtual void mediumStateChanged(bool mediumFree) = 0;
         virtual void corruptedFrameReceived() = 0;
-
-        virtual void internalCollision() = 0;
-        virtual void transmissionGranted() = 0;
 };
 
 } // namespace ieee80211

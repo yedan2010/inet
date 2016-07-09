@@ -80,13 +80,10 @@ void Ieee80211Mac::initialize(int stage)
         rx = check_and_cast<IRx *>(getSubmodule("rx"));
         tx = check_and_cast<ITx *>(getSubmodule("tx"));
         dcf = check_and_cast<Dcf *>(getSubmodule("dcf"));
-        // TODO: pcf = new Pcf();
-        hcf = new Hcf(check_and_cast<Edca*>(getSubmodule("edca")), nullptr); // TODO: nullptr -> check_and_cast<Hcca*>(getSubmodule("Hcca"))
-        // TODO: mcf = new Mcf();
+        hcf = check_and_cast<Hcf *>(getSubmodule("hcf"));
         auto recipientMpduHandler = check_and_cast<RecipientMpduHandler *>(getSubmodule("dcf")->getSubmodule("recipientMpduHandler"));
-        coordinationFunctionNonQoSFacility = new CoordinationFunctionNonQoSFacility(dcf, nullptr, nullptr, recipientMpduHandler);
         auto recipientQosMpduHandler = check_and_cast<RecipientQoSMpduHandler *>(getSubmodule("edca")->getSubmodule("recipientQoSMpduHandler"));
-        coordinationFunctionQoSFacility = new CoordinationFunctionQoSFacility(dcf, hcf, nullptr, nullptr, recipientMpduHandler, nullptr);
+        // coordinationFunctionQoSFacility = new CoordinationFunctionQoSFacility(dcf, hcf, nullptr, nullptr, recipientMpduHandler, nullptr);
     }
 }
 
@@ -249,10 +246,10 @@ void Ieee80211Mac::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
     take(frame);
     EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << "\n";
     ASSERT(!frame->getReceiverAddress().isUnspecified());
-    if (qosSta)
-        coordinationFunctionQoSFacility->processUpperFrame(frame);
-    else
-        coordinationFunctionNonQoSFacility->processUpperFrame(frame);
+//    if (qosSta)
+//        coordinationFunctionQoSFacility->processUpperFrame(frame);
+//    else
+//        coordinationFunctionNonQoSFacility->processUpperFrame(frame);
 }
 
 void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
@@ -264,10 +261,10 @@ void Ieee80211Mac::processLowerFrame(Ieee80211Frame* frame)
         EV_INFO << "This frame is not for us\n";
         delete frame;
     }
-    if (qosSta)
-        coordinationFunctionQoSFacility->processLowerFrame(frame);
-    else
-        coordinationFunctionNonQoSFacility->processLowerFrame(frame);
+//    if (qosSta)
+//        coordinationFunctionQoSFacility->processLowerFrame(frame);
+//    else
+//        coordinationFunctionNonQoSFacility->processLowerFrame(frame);
 }
 
 // FIXME

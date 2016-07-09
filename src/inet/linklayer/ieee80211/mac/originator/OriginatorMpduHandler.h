@@ -55,8 +55,6 @@ class OriginatorMpduHandler : public IOriginatorMpduHandler, public cSimpleModul
 
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame) override;
         virtual bool hasFrameToTransmit() override;
-
-        virtual FrameSequenceContext* buildContext() override;
 };
 
 } /* namespace ieee80211 */

@@ -16,13 +16,13 @@
 #ifndef __INET_EDCACOLLISIONCONTROLLER_H
 #define __INET_EDCACOLLISIONCONTROLLER_H
 
-#include "inet/linklayer/ieee80211/mac/contract/ICollisionController.h"
-#include "inet/linklayer/ieee80211/mac/contract/IContentionBasedChannelAccess.h"
+#include "inet/linklayer/ieee80211/mac/contract/IEdcaCollisionController.h"
+#include "inet/linklayer/ieee80211/mac/channelaccess/Edcaf.h"
 
 namespace inet {
 namespace ieee80211 {
 
-class INET_API EdcaCollisionController : public ICollisionController
+class INET_API EdcaCollisionController : public IEdcaCollisionController
 {
     protected:
         simtime_t txStartTimes[4];

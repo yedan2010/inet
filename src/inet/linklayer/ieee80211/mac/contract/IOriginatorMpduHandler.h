@@ -33,14 +33,8 @@ class IOriginatorMpduHandler
         virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) = 0;
         virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) = 0;
         virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) = 0;
-
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame* frame) = 0;
         virtual bool hasFrameToTransmit() = 0;
-
-        virtual FrameSequenceContext *buildContext() = 0;
-
-        // TODO: kludge
-        virtual int getCw() = 0;
 };
 
 } /* namespace ieee80211 */

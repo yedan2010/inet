@@ -36,7 +36,7 @@ void Edcaf::initialize(int stage)
     if (stage == INITSTAGE_LINK_LAYER) {
         contention = check_and_cast<IContention *>(getSubmodule("contention"));
         ac = getAccessCategory(par("accessCategory"));
-        originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getModuleByPath(par("originatorMpduHandlerModule")));
+        //originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getModuleByPath(par("originatorMpduHandlerModule")));
     }
     else if (stage == INITSTAGE_LAST) {
         auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
@@ -88,31 +88,6 @@ int Edcaf::getCwMin(int aCwMin)
     }
 }
 
-void Edcaf::channelAccessGranted()
-{
-    if (!isSequenceRunning()) {
-        frameSequence = new HcfFs();
-        context = originatorMpduHandler->buildContext();
-        frameSequence->startSequence(context, 0);
-        startFrameSequenceStep();
-    }
-    else
-        throw cRuntimeError("Channel access granted while a frame sequence is running");
-}
-
-void Edcaf::internalCollision()
-{
-    // Take the first frame from queue assuming it would have been sent
-    OriginatorQoSMpduHandler *qosMpduHandler = check_and_cast<OriginatorQoSMpduHandler*>(originatorMpduHandler);
-    if (qosMpduHandler->internalCollision())
-        startContention();
-}
-
-void Edcaf::transmissionGranted()
-{
-    contention->transmissionGranted();
-}
-
 AccessCategory Edcaf::getAccessCategory(const char *ac)
 {
     if (strcmp("AC_BK", ac) == 0)
@@ -136,7 +111,7 @@ void Edcaf::channelAccessGranted()
     contentionInProgress = false;
 }
 
-void Edcaf::releaseChannelAccess(IContentionBasedChannelAccess::ICallback* callback)
+void Edcaf::releaseChannelAccess(IChannelAccess::ICallback* callback)
 {
     ASSERT(owning);
     owning = false;
@@ -144,13 +119,13 @@ void Edcaf::releaseChannelAccess(IContentionBasedChannelAccess::ICallback* callb
     this->callback = nullptr;
 }
 
-void Edcaf::requestChannelAccess(IContentionBasedChannelAccess::ICallback* callback, int cw)
+void Edcaf::requestChannelAccess(IChannelAccess::ICallback* callback)
 {
     this->callback = callback;
     if (owning)
         callback->channelAccessGranted();
     else if (!contentionInProgress) {
-        contention->startContention(cw);
+        contention->startContention(recoveryProcedure->getCw());
         contentionInProgress = true;
     }
     else ;

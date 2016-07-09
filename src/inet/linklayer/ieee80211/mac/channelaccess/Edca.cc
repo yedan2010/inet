@@ -36,20 +36,6 @@ void Edca::initialize(int stage)
     }
 }
 
-Edcaf* Edca::getActiveEdcaf()
-{
-    for (auto edcaf : edcafs)
-        if (edcaf->isSequenceRunning())
-            return edcaf;
-    return nullptr;
-}
-
-void Edca::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
-{
-    AccessCategory ac = classifyFrame(frame);
-    edcafs[ac]->processUpperFrame(frame);
-}
-
 Tid Edca::getTid(Ieee80211DataOrMgmtFrame* frame)
 {
     if (auto addbaResponse = dynamic_cast<Ieee80211AddbaResponse*>(frame)) {
@@ -61,11 +47,6 @@ Tid Edca::getTid(Ieee80211DataOrMgmtFrame* frame)
     }
     else
         throw cRuntimeError("Unknown frame type = %d", frame->getType());
-}
-
-void Edca::processLowerFrame(Ieee80211Frame* frame)
-{
-    getActiveEdcaf()->processLowerFrame(frame);
 }
 
 AccessCategory Edca::classifyFrame(Ieee80211DataOrMgmtFrame *frame)
@@ -86,14 +67,21 @@ AccessCategory Edca::mapTidToAc(Tid tid)
     }
 }
 
-
-void Edca::channelAccessGranted()
+Edcaf* Edca::getChannelOwner()
 {
+    for (auto edcaf : edcafs)
+        if (edcaf->isOwning())
+            return edcaf;
+    return nullptr;
 }
 
-bool Edca::isInternalCollision(Edcaf *edcaf)
+std::vector<Edcaf*> Edca::getInternallyCollidedEdcafs()
 {
-
+    std::vector<Edcaf*> edcafs;
+    for (auto edcaf : this->edcafs)
+        if (edcaf->isInternalCollision())
+            edcafs.push_back(edcaf);
+    return edcafs;
 }
 
 } // namespace ieee80211

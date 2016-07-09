@@ -31,21 +31,18 @@ simsignal_t Contention::stateChangedSignal = registerSignal("stateChanged");
 Register_Enum(Contention::State,
         (Contention::IDLE,
          Contention::DEFER,
-         Contention::IFS_AND_BACKOFF,
-         Contention::OWNING));
+         Contention::IFS_AND_BACKOFF)
+         );
 
 Define_Module(Contention);
 
 void Contention::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        mac = check_and_cast<IMacRadioInterface *>(getContainingNicModule(this));
-        collisionController = dynamic_cast<ICollisionController *>(getModuleByPath(par("collisionControllerModule")));
         backoffOptimization = par("backoffOptimization");
         lastIdleStartTime = simTime() - SimTime::getMaxTime() / 2;
 
-        if (!collisionController)
-            startTxEvent = new cMessage("startTx");
+        startTxEvent = new cMessage("startTx");
 
         fsm.setName("fsm");
         fsm.setState(IDLE, "IDLE");
@@ -74,7 +71,7 @@ Contention::~Contention()
     cancelAndDelete(startTxEvent);
 }
 
-void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw)
+void Contention::startContention(int cw)
 {
     ASSERT(ifs >= 0 && eifs >= 0 && slotTime >= 0 && cw >= 0);
     Enter_Method("startContention()");
@@ -84,14 +81,13 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTi
     this->slotTime = slotTime;
 
     backoffSlots = cw;
-    handleWithFSM(START, nullptr);
+    handleWithFSM(START);
 }
 
-void Contention::handleWithFSM(EventType event, cMessage *msg)
+void Contention::handleWithFSM(EventType event)
 {
     emit(stateChangedSignal, fsm.getState());
     EV_DEBUG << "handleWithFSM: processing event " << getEventName(event) << "\n";
-    bool finallyReportInternalCollision = false;
     bool finallyReportChannelAccessGranted = false;
     FSMA_Switch(fsm) {
         FSMA_State(IDLE) {
@@ -108,7 +104,6 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
                     );
             FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
             FSMA_Ignore_Event(event==CORRUPTED_FRAME_RECEIVED);
-            FSMA_Ignore_Event(event==CHANNEL_RELEASED);
             FSMA_Fail_On_Unhandled_Event();
         }
         FSMA_State(DEFER) {
@@ -128,8 +123,9 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
         FSMA_State(IFS_AND_BACKOFF) {
             FSMA_Enter();
             FSMA_Event_Transition(Backoff-expired,
-                    event == TRANSMISSION_GRANTED,
-                    OWNING,
+                    event == CHANNEL_ACCESS_GRANTED,
+                    IDLE,
+                    lastIdleStartTime = simTime();
                     finallyReportChannelAccessGranted = true;
                     );
             FSMA_Event_Transition(Defer-on-channel-busy,
@@ -138,16 +134,6 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
                     cancelTransmissionRequest();
                     computeRemainingBackoffSlots();
                     );
-            FSMA_Event_Transition(optimized-internal-collision,
-                    event == INTERNAL_COLLISION && backoffOptimizationDelta != SIMTIME_ZERO,
-                    IFS_AND_BACKOFF,
-                    revokeBackoffOptimization();
-                    );
-            FSMA_Event_Transition(Internal-collision,
-                    event == INTERNAL_COLLISION,
-                    IDLE,
-                    finallyReportInternalCollision = true; lastIdleStartTime = simTime();
-                    );
             FSMA_Event_Transition(Use-EIFS,
                     event == CORRUPTED_FRAME_RECEIVED,
                     IFS_AND_BACKOFF,
@@ -155,22 +141,10 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
                     );
             FSMA_Fail_On_Unhandled_Event();
         }
-        FSMA_State(OWNING) {
-            FSMA_Event_Transition(Channel-Released,
-                    event == CHANNEL_RELEASED,
-                    IDLE,
-                    lastIdleStartTime = simTime();
-                    );
-            FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
-            FSMA_Ignore_Event(event==CORRUPTED_FRAME_RECEIVED);
-            FSMA_Fail_On_Unhandled_Event();
-        }
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
-        channelAccess->channelAccessGranted();
-    if (finallyReportInternalCollision)
-        channelAccess->internalCollision();
+        callback->channelAccessGranted();
     if (hasGUI())
         updateDisplayString();
 }
@@ -180,53 +154,31 @@ void Contention::mediumStateChanged(bool mediumFree)
     Enter_Method_Silent(mediumFree ? "medium FREE" : "medium BUSY");
     this->mediumFree = mediumFree;
     lastChannelBusyTime = simTime();
-    handleWithFSM(MEDIUM_STATE_CHANGED, nullptr);
+    handleWithFSM(MEDIUM_STATE_CHANGED);
 }
 
 void Contention::handleMessage(cMessage *msg)
 {
     ASSERT(msg == startTxEvent);
-    transmissionGranted();
+    handleWithFSM(CHANNEL_ACCESS_GRANTED);
 }
 
 void Contention::corruptedFrameReceived()
 {
     Enter_Method("corruptedFrameReceived()");
-    handleWithFSM(CORRUPTED_FRAME_RECEIVED, nullptr);
-}
-
-void Contention::transmissionGranted()
-{
-    Enter_Method("transmissionGranted()");
-    handleWithFSM(TRANSMISSION_GRANTED, nullptr);
-}
-
-void Contention::internalCollision()
-{
-    Enter_Method("internalCollision()");
-    handleWithFSM(INTERNAL_COLLISION, nullptr);
-}
-
-void Contention::releaseChannel()
-{
-    Enter_Method("channelReleased()");
-    handleWithFSM(CHANNEL_RELEASED, nullptr);
+    handleWithFSM(CORRUPTED_FRAME_RECEIVED);
 }
 
 void Contention::scheduleTransmissionRequestFor(simtime_t txStartTime)
 {
-    if (collisionController)
-        collisionController->scheduleTransmissionRequest(channelAccess, txStartTime, this);
-    else
-        scheduleAt(txStartTime, startTxEvent);
+    scheduleAt(txStartTime, startTxEvent);
+    callback->txStartTimeCalculated(txStartTime);
 }
 
 void Contention::cancelTransmissionRequest()
 {
-    if (collisionController)
-        collisionController->cancelTransmissionRequest(channelAccess);
-    else
-        cancelEvent(startTxEvent);
+    cancelEvent(startTxEvent);
+    callback->txStartTimeCanceled();
 }
 
 void Contention::scheduleTransmissionRequest()
@@ -278,9 +230,7 @@ const char *Contention::getEventName(EventType event)
         CASE(START);
         CASE(MEDIUM_STATE_CHANGED);
         CASE(CORRUPTED_FRAME_RECEIVED);
-        CASE(TRANSMISSION_GRANTED);
-        CASE(INTERNAL_COLLISION);
-        CASE(CHANNEL_RELEASED);
+        CASE(CHANNEL_ACCESS_GRANTED);
         default: ASSERT(false); return "";
     }
 #undef CASE
@@ -294,11 +244,5 @@ void Contention::updateDisplayString()
     getDisplayString().setTagArg("t", 0, stateName);
 }
 
-bool Contention::isContentionInProgress()
-{
-    return fsm.getState() != IDLE;
-}
-
 } // namespace ieee80211
 } // namespace inet
-

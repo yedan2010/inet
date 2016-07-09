@@ -15,10 +15,30 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#include <channelaccess/Hcca.h>
+#include "Hcca.h"
 
 namespace inet {
 namespace ieee80211 {
+
+bool Hcca::isOwning()
+{
+    return false;
+}
+
+void Hcca::requestChannelAccess(ICallback* callback)
+{
+    throw cRuntimeError("Unimplemented!");
+}
+
+void Hcca::releaseChannelAccess(ICallback* callback)
+{
+    throw cRuntimeError("Unimplemented!");
+}
+
+void Hcca::channelAccessGranted()
+{
+    throw cRuntimeError("Unimplemented!");
+}
 
 } // namespace ieee80211
 } // namespace inet

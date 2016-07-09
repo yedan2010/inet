@@ -18,8 +18,15 @@
 #ifndef __INET_HCF_H
 #define __INET_HCF_H
 
+#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
+
 #include "inet/linklayer/ieee80211/mac/channelaccess/Edca.h"
 #include "inet/linklayer/ieee80211/mac/channelaccess/Hcca.h"
+#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
+
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorQoSMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientQoSMpduHandler.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -27,19 +34,26 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Hybrid Coordination Function.
  */
-class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IContentionBasedChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
+class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
 {
     protected:
+        // channel access methods
         Edca *edca = nullptr;
-        OriginatorQoSMpduHandler *originatorMpduHandler = nullptr;
-        RecipientQoSMpduHandler *recipientMpduHandler = nullptr;
+        Hcca *hcca = nullptr; // TODO: unimplemented,
+
+        IRx *rx = nullptr;
+        ITx *tx = nullptr;
+
+        FrameSequenceHandler *frameSequenceHandler = nullptr;
 
         std::vector<PendingQueue *> pendingQueues;
         std::vector<InProgressFrames *> inprogressFrames;
-        std::vector<AckHandler *> ackHandlers;
-        std::vector<RecoveryProcedure *> recoveryProcedures;
 
         OriginatorQoSMacDataService *macDataService = nullptr;
+
+        // procedures
+        std::vector<AckHandler *> ackHandlers;
+        std::vector<RecoveryProcedure *> recoveryProcedures;
         OriginatorAckProcedure *ackProcedure = nullptr;
         RtsProcedure *rtsProcedure = nullptr;
         TxOpProcedure *txopProcedure = nullptr;
@@ -48,22 +62,27 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
         OriginatorBlockAckProcedure *blockAckProcedure = nullptr;
         EdcaTransmitLifetimeHandler *lifetimeHandler = nullptr;
 
-        const Ieee80211ModeSet *modeSet = nullptr;
+        OriginatorQoSMpduHandler *originatorMpduHandler = nullptr;
+        RecipientQoSMpduHandler *recipientMpduHandler = nullptr;
 
-        Hcca *hcca = nullptr; // TODO: unimplemented,
+        const Ieee80211ModeSet *modeSet = nullptr;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
 
-    public:
-        virtual bool isSequenceRunning() { return edca->isSequenceRunning(); }
+        // Edca
+        void startFrameSequence(AccessCategory ac);
+        void handleInternalCollision(std::vector<Edcaf*> internallyCollidedEdcafs);
 
+        // TODO: Hcca
+
+    public:
         // ICoordinationFunction
         virtual void processUpperFrame(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void processLowerFrame(Ieee80211Frame *frame) override;
 
-        // IContentionBasedChannelAccess::ICallback
+        // IChannelAccess::ICallback
         virtual void channelAccessGranted() override;
 
         // IFrameSequenceHandler::ICallback
@@ -72,7 +91,7 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
         virtual bool isReceptionInProgress() override;
 
         // ITx::ICallback
-        virtual bool transmissionComplete() override;
+        virtual void transmissionComplete() override;
 };
 
 } /* namespace ieee80211 */

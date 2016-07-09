@@ -34,60 +34,96 @@ void Hcf::initialize(int stage)
         rtsProcedure = new RtsProcedure(rateSelection);
         blockAckProcedure = new OriginatorBlockAckProcedure(rateSelection);
         simtime_t txopLimit = par("txopLimit");
-        txopProcedure = new TxOpProcedure(TxOpProcedure::Type::EDCA, txopLimit != -1 ? txopLimit : getTxopLimit(rateSelection->getSlowestMandatoryMode()).get());
+        //txopProcedure = new TxOpProcedure(TxOpProcedure::Type::EDCA, txopLimit != -1 ? txopLimit : getTxopLimit(rateSelection->getSlowestMandatoryMode()).get());
         for (int i = 0; i < 4; i++) {
             pendingQueues.push_back(new PendingQueue(par("maxQueueSize"), nullptr));
             ackHandlers.push_back(new AckHandler());
             inprogressFrames.push_back(new InProgressFrames(pendingQueues[i], macDataService, ackHandlers[i]));
-            recoveryProcedures.push_back(getSubmodule("recoveryProcedure", i));
+            //recoveryProcedures.push_back(getSubmodule("recoveryProcedure", i));
         }
     }
 }
 
 void Hcf::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
 {
-    edca->processUpperFrame(frame);
+    AccessCategory ac = edca->classifyFrame(frame);
 }
 
 void Hcf::processLowerFrame(Ieee80211Frame* frame)
 {
-    edca->processLowerFrame(frame);
+    auto edcaf = edca->getChannelOwner();
+    if (edcaf) {
+
+    }
+    else if (hcca->isOwning()) {
+
+    }
+    else
+        recipientMpduHandler->processReceivedFrame(frame);
+}
+
+void Hcf::startFrameSequence(AccessCategory ac)
+{
 }
 
 void Hcf::channelAccessGranted()
 {
-    auto edcafs = edca->getEdcafs();
-    for (auto edcaf : edcafs) {
-        if (edcaf->isOwning()) {
-            AccessCategory ac = edcaf->getAccessCategory();
-            // start frame sequence
-        }
-        else if (edcaf->isInternalCollision()) {
-            Ieee80211DataOrMgmtFrame *internallyCollidedFrame = inProgressFrames->getFrameToTransmit();
-            recoveryProcedure->dataOrMgmtFrameTransmissionFailed(internallyCollidedFrame);
-            if (recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(internallyCollidedFrame))
-                inProgressFrames->dropFrame(internallyCollidedFrame);
-            else
-                edcaf->requestChannelAccess(this, 2234234);
-        }
-        else ;
+    auto edcaf = edca->getChannelOwner();
+    if (edcaf) {
+        startFrameSequence(edcaf->getAccessCategory());
+        handleInternalCollision(edca->getInternallyCollidedEdcafs());
     }
+    else if (hcca->isOwning())  {
+        throw cRuntimeError("Unimplemented!");
+        // frameSequenceHandler->startFrameSequence(new HcfFs(), context);
+    }
+    else
+        throw cRuntimeError("Channel access granted but channel owner not found!");
 }
 
-void Hcf::transmitFrame(Ieee80211Frame* frame, simtime_t ifs)
+void Hcf::handleInternalCollision(std::vector<Edcaf*> internallyCollidedEdcafs)
 {
+//    for (auto edcaf : internallyCollidedEdcafs) {
+//        AccessCategory ac = edcaf->getAccessCategory();
+//        Ieee80211DataOrMgmtFrame *internallyCollidedFrame = inProgressFrames->getFrameToTransmit();
+//        recoveryProcedure->dataOrMgmtFrameTransmissionFailed(internallyCollidedFrame);
+//        if (recoveryProcedure->isDataOrMgtmFrameRetryLimitReached(internallyCollidedFrame))
+//            inProgressFrames->dropFrame(internallyCollidedFrame);
+//        else
+//            edcaf->requestChannelAccess(this);
+//    }
 }
 
 void Hcf::frameSequenceFinished()
 {
+    auto edcaf = edca->getChannelOwner();
+    if (edcaf)
+        edcaf->releaseChannelAccess(this);
+    else if (hcca->isOwning())
+        hcca->releaseChannelAccess(this);
+    else
+        throw cRuntimeError("Frame sequence finished but channel owner not found!");
 }
 
 bool Hcf::isReceptionInProgress()
 {
+    return rx->isReceptionInProgress();
 }
 
-bool Hcf::transmissionComplete()
+void Hcf::transmitFrame(Ieee80211Frame* frame, simtime_t ifs)
 {
+    tx->transmitFrame(frame, ifs, this);
+}
+
+void Hcf::transmissionComplete()
+{
+    auto edcaf = edca->getChannelOwner();
+    if (edcaf)
+        frameSequenceHandler->transmissionComplete();
+    else if (hcca->isOwning())
+        frameSequenceHandler->transmissionComplete();
+    else
+        throw cRuntimeError("Transmission complete but channel owner not found");
 }
 
 } // namespace ieee80211

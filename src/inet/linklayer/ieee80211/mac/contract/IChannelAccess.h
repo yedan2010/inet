@@ -13,26 +13,33 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __INET_ICONTENTIONFREECHANNELACCESS_H
-#define __INET_ICONTENTIONFREECHANNELACCESS_H
+#ifndef __INET_ICONTENTIONBASEDCHANNELACCESS_H
+#define __INET_ICONTENTIONBASEDCHANNELACCESS_H
 
 #include "inet/common/INETDefs.h"
-#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
 
 namespace inet {
 namespace ieee80211 {
 
-class INET_API IContentionFreeChannelAccess
+class INET_API IChannelAccess
 {
     public:
-        virtual ~IContentionFreeChannelAccess() { }
+        class ICallback
+        {
+            public:
+                virtual ~ICallback() {}
 
-        virtual void requestChannelAccess(ICoordinationFunction *coordinationFunction) = 0;
-        virtual void releaseChannelAccess(ICoordinationFunction *coordinationFunction) = 0;
-        virtual void channelAccessGranted() = 0;
+                virtual void channelAccessGranted() = 0;
+        };
+
+    public:
+        virtual ~IChannelAccess() { }
+
+        virtual void requestChannelAccess(ICallback *callback) = 0;
+        virtual void releaseChannelAccess(ICallback *callback) = 0;
 };
 
 } /* namespace ieee80211 */
 } /* namespace inet */
 
-#endif // ifndef __INET_ICONTENTIONFREECHANNELACCESS_H
+#endif // ifndef __INET_ICONTENTIONBASEDCHANNELACCESS_H

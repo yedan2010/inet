@@ -25,15 +25,15 @@ EdcaCollisionController::EdcaCollisionController()
         txStartTimes[ac] = -1;
 }
 
-void EdcaCollisionController::scheduleTransmissionRequest(Edcaf *edcaf, simtime_t txStartTime)
+void EdcaCollisionController::recordTxStartTime(Edcaf *edcaf, simtime_t txStartTime)
 {
-    Enter_Method("scheduleTransmissionRequest(%d)", edcaf->getAccessCategory());
+    //Enter_Method("recordTxStartTime(%d)", edcaf->getAccessCategory());
     txStartTimes[edcaf->getAccessCategory()] = txStartTime;
 }
 
-void EdcaCollisionController::cancelTransmissionRequest(Edcaf *edcaf)
+void EdcaCollisionController::cancelTxStartTime(Edcaf *edcaf)
 {
-    Enter_Method("cancelTransmissionRequest(%d)", edcaf->getAccessCategory());
+    //Enter_Method("cancelTxStartTime(%d)", edcaf->getAccessCategory());
     txStartTimes[edcaf->getAccessCategory()] = -1;
 }
 
@@ -41,7 +41,7 @@ bool EdcaCollisionController::isInternalCollision(Edcaf *edcaf)
 {
     simtime_t now = simTime();
     for (int ac = 0; ac < 4; ac++) {
-        if (txStartTimes[i] == now && edcaf->getAccessCategory() < ac)
+        if (txStartTimes[ac] == now && edcaf->getAccessCategory() < ac)
             return true;
     }
     return false;
