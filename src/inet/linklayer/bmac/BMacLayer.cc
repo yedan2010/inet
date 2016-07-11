@@ -18,7 +18,6 @@
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/networklayer/common/InterfaceEntry.h"
 #include "inet/common/ModuleAccess.h"
-#include "inet/linklayer/contract/IMACProtocolControlInfo.h"
 #include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/linklayer/bmac/BMacLayer.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
