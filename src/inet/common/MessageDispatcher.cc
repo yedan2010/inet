@@ -130,9 +130,11 @@ cGate *MessageDispatcher::handleUpperLayerCommand(cMessage *message, cGate *inGa
     int interfaceId = computeInterfaceId(message);
     int protocolId = computeProtocolId(message);
     if (socketId != -1) {
-        if (socketIdToUpperLayerGateIndex.find(socketId) != socketIdToUpperLayerGateIndex.end())
-            throw cRuntimeError("handleUpperLayerCommand(): Socket is already registered: id = %d", socketId);
-        socketIdToUpperLayerGateIndex[socketId] = inGate->getIndex();
+        auto it = socketIdToUpperLayerGateIndex.find(socketId);
+        if (it == socketIdToUpperLayerGateIndex.end())
+            socketIdToUpperLayerGateIndex[socketId] = inGate->getIndex();
+        else if (it->first != socketId)
+            throw cRuntimeError("handleUpperLayerCommand(): Socket is already registered: id = %d, gate = %d, new gate = %d", socketId, it->second, inGate->getIndex());
     }
     if (protocolId != -1) {
         auto it = protocolIdToLowerLayerGateIndex.find(protocolId);
