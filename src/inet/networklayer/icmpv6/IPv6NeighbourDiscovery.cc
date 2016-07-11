@@ -22,6 +22,7 @@
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
+#include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/ipv6/IPv6ControlInfo.h"
 #include "inet/networklayer/icmpv6/ICMPv6.h"
@@ -756,12 +757,13 @@ void IPv6NeighbourDiscovery::sendPacketToIPv6Module(cMessage *msg, const IPv6Add
 {
     IPv6ControlInfo *controlInfo = new IPv6ControlInfo();
     controlInfo->setProtocol(IP_PROT_IPv6_ICMP);
-    controlInfo->setDestAddr(destAddr);
-    controlInfo->setSrcAddr(srcAddr);
     controlInfo->setHopLimit(255);
     msg->setControlInfo(controlInfo);
     msg->removeTag<ProtocolReq>();         // send to NIC
     msg->ensureTag<InterfaceReq>()->setInterfaceId(interfaceId);
+    auto addressReq = msg->ensureTag<L3AddressReq>();
+    addressReq->setSource(srcAddr);
+    addressReq->setDestination(destAddr);
 
     send(msg, "ipv6Out");
 }
@@ -1982,17 +1984,18 @@ void IPv6NeighbourDiscovery::processNSWithSpecifiedSrcAddr(IPv6NeighbourSolicita
 
     //Neighbour Solicitation Information
     MACAddress nsMacAddr = ns->getSourceLinkLayerAddress();
+    IPv6Address nsL3SrcAddr = ns->getMandatoryTag<L3AddressInd>()->getSource().toIPv6();
 
     int ifID = ie->getInterfaceId();
 
     //Look for the Neighbour Cache Entry
-    Neighbour *entry = neighbourCache.lookup(nsCtrlInfo->getSrcAddr(), ifID);
+    Neighbour *entry = neighbourCache.lookup(nsL3SrcAddr, ifID);
 
     if (entry == nullptr) {
         /*If an entry does not already exist, the node SHOULD create a new one
            and set its reachability state to STALE as specified in Section 7.3.3.*/
         EV_INFO << "Neighbour Entry not found. Create a Neighbour Cache Entry.\n";
-        neighbourCache.addNeighbour(nsCtrlInfo->getSrcAddr(), ifID, nsMacAddr);
+        neighbourCache.addNeighbour(nsL3SrcAddr, ifID, nsMacAddr);
     }
     else {
         /*If an entry already exists, and the cached link-layer address differs from
