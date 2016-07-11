@@ -46,6 +46,10 @@ class INET_API IContention
             public:
                 ~ICallback() { }
 
+                virtual void expectedChannelAccess(simtime_t time) = 0;
+                virtual void channelAccessGranted() = 0;
+
+
                 virtual void txStartTimeCalculated(simtime_t txStartTime) = 0;
                 virtual void txStartTimeCanceled() = 0;
                 virtual void channelAccessGranted() = 0;
