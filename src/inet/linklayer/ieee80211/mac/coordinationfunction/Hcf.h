@@ -89,10 +89,10 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
         std::vector<PendingQueue *> pendingQueues;
         std::vector<InProgressFrames *> inProgressFrames;
 
-        // Frame sequence handlers
+        // Frame sequence handler
         IFrameSequenceHandler *frameSequenceHandler = nullptr;
 
-        simtime_t sifs;
+        simtime_t sifs = -1;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -102,6 +102,7 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
         void handleInternalCollision(std::vector<Edcaf*> internallyCollidedEdcafs);
 
         void sendUp(const std::vector<Ieee80211Frame*>& completeFrames);
+        virtual bool hasFrameToTransmit();
 
         virtual void recipientProcessReceivedFrame(Ieee80211Frame *frame);
         virtual void recipientProcessControlFrame(Ieee80211Frame *frame);
@@ -122,9 +123,8 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
 
         // IFrameSequenceHandler::ICallback
         virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) override;
-
         virtual bool isReceptionInProgress() override;
-        virtual bool hasFrameToTransmit() override;
+
 
         // ITx::ICallback
         virtual void transmissionComplete() override;

@@ -37,9 +37,7 @@ class INET_API IFrameSequenceHandler
                 virtual void originatorProcessReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) = 0;
                 virtual void originatorProcessFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) = 0;
                 virtual void frameSequenceFinished() = 0;
-
                 virtual bool isReceptionInProgress() = 0;
-                virtual bool hasFrameToTransmit() = 0;
         };
 
     public:
