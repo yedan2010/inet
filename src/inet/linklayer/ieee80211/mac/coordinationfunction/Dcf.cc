@@ -45,7 +45,7 @@ void Dcf::initialize(int stage)
 
 void Dcf::channelAccessGranted()
 {
-    frameSequenceHandler->startFrameSequence(new DcfFs(), context);
+    frameSequenceHandler->startFrameSequence(new DcfFs(), context, this);
 }
 
 void Dcf::processUpperFrame(Ieee80211DataOrMgmtFrame* frame)
@@ -83,5 +83,26 @@ void Dcf::transmissionComplete()
     frameSequenceHandler->transmissionComplete();
 }
 
+bool Dcf::hasFrameToTransmit()
+{
+}
+
+void Dcf::processRtsProtectionFailed(Ieee80211DataOrMgmtFrame* protectedFrame)
+{
+}
+
+void Dcf::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
+{
+}
+
+void Dcf::processReceivedFrame(Ieee80211Frame* frame, Ieee80211Frame* lastTransmittedFrame)
+{
+}
+
+void Dcf::processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
+{
+}
+
 } // namespace ieee80211
 } // namespace inet
+

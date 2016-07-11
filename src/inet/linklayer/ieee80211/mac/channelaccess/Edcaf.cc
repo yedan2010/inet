@@ -21,36 +21,29 @@
 #include "inet/linklayer/ieee80211/mac/framesequence/HcfFs.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
 #include "inet/linklayer/ieee80211/mac/lifetime/EdcaTransmitLifetimeHandler.h"
-#include "inet/linklayer/ieee80211/mac/originator/OriginatorQoSMpduHandler.h"
 
 namespace inet {
 namespace ieee80211 {
 
-Define_Module(Edcaf);
-
 inline double fallback(double a, double b) {return a!=-1 ? a : b;}
 inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
 
-void Edcaf::initialize(int stage)
-{
-    if (stage == INITSTAGE_LINK_LAYER) {
-        contention = check_and_cast<IContention *>(getSubmodule("contention"));
-        ac = getAccessCategory(par("accessCategory"));
-        //originatorMpduHandler = check_and_cast<IOriginatorMpduHandler *>(getModuleByPath(par("originatorMpduHandlerModule")));
-    }
-    else if (stage == INITSTAGE_LAST) {
-        auto rateSelection = check_and_cast<IRateSelection *>(getModuleByPath(par("rateSelectionModule")));
-        const IIeee80211Mode *referenceMode = rateSelection->getSlowestMandatoryMode(); // or any other; slotTime etc must be the same for all modes we use
-        slotTime = referenceMode->getSlotTime();
-        sifs = referenceMode->getSifsTime();
-        int aifsn = fallback(par("aifsn"), getAifsNumber());
-        simtime_t aifs = sifs + aifsn * slotTime;
-        ifs = aifs;
-        eifs = sifs + aifs + referenceMode->getDuration(LENGTH_ACK);
-    }
-}
+//Edcaf::Edcaf(int aifsn, AccessCategory ac, IChannelAccess::ICallback *callback, IEdcaCollisionController *collisionController, RecoveryProcedure *recoveryProcedure, IRateSelection *rateSelection)
+//{
+//    this->ac = ac;
+//    this->callback = callback;
+//    this->collisionController = collisionController;
+//    this->recoveryProcedure = recoveryProcedure;
+//    auto modeSet = rateSelection->getModeSet();
+//    auto referenceMode = modeSet->getSlowerMandatoryMode();
+//    slotTime = referenceMode->getSlotTime();
+//    sifs = referenceMode->getSifsTime();
+//    simtime_t aifs = sifs + fallback(aifsn, getAifsNumber(ac)) * slotTime;
+//    ifs = aifs;
+//    eifs = sifs + aifs + referenceMode->getDuration(LENGTH_ACK);
+//}
 
-int Edcaf::getAifsNumber()
+int Edcaf::getAifsNumber(AccessCategory ac)
 {
     switch (ac)
     {
@@ -125,7 +118,7 @@ void Edcaf::requestChannelAccess(IChannelAccess::ICallback* callback)
     if (owning)
         callback->channelAccessGranted();
     else if (!contentionInProgress) {
-        contention->startContention(recoveryProcedure->getCw());
+        contention->startContention(recoveryProcedure->getCw(), ifs, eifs, slotTime, this);
         contentionInProgress = true;
     }
     else ;

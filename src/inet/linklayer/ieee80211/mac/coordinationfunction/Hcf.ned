@@ -22,7 +22,6 @@ import inet.linklayer.ieee80211.mac.originator.OriginatorQoSMacDataService;
 import inet.linklayer.ieee80211.mac.originator.RecoveryProcedure;
 import inet.linklayer.ieee80211.mac.recipient.RecipientBlockAckAgreementHandler;
 import inet.linklayer.ieee80211.mac.recipient.RecipientQoSMacDataService;
-import inet.linklayer.ieee80211.mac.recipient.RecipientQoSMpduHandler;
 
 
 //
@@ -31,6 +30,8 @@ import inet.linklayer.ieee80211.mac.recipient.RecipientQoSMpduHandler;
 module Hcf
 {
     parameters:
+        int numOfEdcafs = default(4);
+
         @class(Hcf);
         @display("i=block/queue");
 
@@ -43,10 +44,6 @@ module Hcf
             @display("p=52,348");
         }
 
-        // Procedures
-        recipientQoSMpduHandler: RecipientQoSMpduHandler {
-            @display("p=350,212;i=block/dispatch");
-        }
         originatorQoSMacDataService: OriginatorQoSMacDataService {
             @display("p=350,387");
         }
@@ -59,7 +56,7 @@ module Hcf
         recipientBlockAckAgreementHandler: RecipientBlockAckAgreementHandler {
             @display("p=350,469");
         }
-        recoveryProcedure[4]: RecoveryProcedure {
-            @display("p=166,338");
+        recoveryProcedures[numOfEdcafs]: RecoveryProcedure {
+            @display("p=350,223");
         }
 }

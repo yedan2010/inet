@@ -33,17 +33,19 @@ class INET_API Edca : public cSimpleModule
         IEdcaCollisionController *collisionController = nullptr;
 
     protected:
-        virtual int numInitStages() const override { return NUM_INIT_STAGES;}
+        virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
 
         virtual Tid getTid(Ieee80211DataOrMgmtFrame *frame);
+        virtual AccessCategory mapTidToAc(Tid tid);
 
     public:
-        virtual AccessCategory mapTidToAc(Tid tid);
         virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
-
         virtual Edcaf *getChannelOwner();
         virtual std::vector<Edcaf*> getInternallyCollidedEdcafs();
+
+        virtual void requestChannelAccess(AccessCategory ac, IChannelAccess::ICallback *callback);
+        virtual void releaseChannelAccess(AccessCategory ac, IChannelAccess::ICallback *callback);
 };
 
 } /* namespace ieee80211 */

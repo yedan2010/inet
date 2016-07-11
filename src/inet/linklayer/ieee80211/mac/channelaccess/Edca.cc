@@ -25,13 +25,10 @@ Define_Module(Edca);
 void Edca::initialize(int stage)
 {
     if (stage == INITSTAGE_LINK_LAYER_2) {
-        int numFoos = par("numFoos");
-        edcafs.resize(numFoos, nullptr);
-        for (int i = 0; i < numFoos; i++) {
-            auto edcaf = check_and_cast<Edcaf *>(getSubmodule("foos", i)->getSubmodule("edcaf")); // TODO: foos
-            if (edcafs[edcaf->getAccessCategory()] != nullptr)
-                throw cRuntimeError("An edcaf with access category %d has already been created", edcaf->getAccessCategory());
-            edcafs[edcaf->getAccessCategory()] = edcaf;
+        int numEdcafs = par("numEdcafs");
+        for (int ac = 0; ac < numEdcafs; ac++) {
+            auto callback = check_and_cast<IChannelAccess::ICallback*>(getParentModule());
+            // edcafs.push_back(new Edcaf(-1, ac, callback, collisionController, nullptr));
         }
     }
 }
@@ -82,6 +79,16 @@ std::vector<Edcaf*> Edca::getInternallyCollidedEdcafs()
         if (edcaf->isInternalCollision())
             edcafs.push_back(edcaf);
     return edcafs;
+}
+
+void Edca::requestChannelAccess(AccessCategory ac, IChannelAccess::ICallback* callback)
+{
+    edcafs[ac]->requestChannelAccess(callback);
+}
+
+void Edca::releaseChannelAccess(AccessCategory ac, IChannelAccess::ICallback* callback)
+{
+    edcafs[ac]->releaseChannelAccess(callback);
 }
 
 } // namespace ieee80211

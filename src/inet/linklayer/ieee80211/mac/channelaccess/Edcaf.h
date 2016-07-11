@@ -19,9 +19,10 @@
 #ifndef __INET_EDCAF_H
 #define __INET_EDCAF_H
 
-#include "inet/linklayer/ieee80211/mac/contract/IEdcaCollisionController.h"
 #include "inet/linklayer/ieee80211/mac/contract/IChannelAccess.h"
 #include "inet/linklayer/ieee80211/mac/contract/IContention.h"
+#include "inet/linklayer/ieee80211/mac/contract/IEdcaCollisionController.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRateSelection.h"
 #include "inet/linklayer/ieee80211/mac/originator/RecoveryProcedure.h"
 
 namespace inet {
@@ -30,7 +31,7 @@ namespace ieee80211 {
 /**
  * Implements IEEE 802.11 Enhanced Distributed Channel Access Function.
  */
-class INET_API Edcaf : public IChannelAccess, public IContention::ICallback, public cSimpleModule
+class INET_API Edcaf : public IChannelAccess, public IContention::ICallback
 {
     protected:
         RecoveryProcedure *recoveryProcedure = nullptr;
@@ -50,15 +51,16 @@ class INET_API Edcaf : public IChannelAccess, public IContention::ICallback, pub
         AccessCategory ac = AccessCategory(-1);
 
     protected:
-        virtual int numInitStages() const override { return NUM_INIT_STAGES; }
-        virtual void initialize(int stage) override;
 
         AccessCategory getAccessCategory(const char *ac);
-        int getAifsNumber();
         int getCwMax(int aCwMax, int aCwMin); // TODO: remove
         int getCwMin(int aCwMin);// TODO: remove
 
+        virtual int getAifsNumber(AccessCategory ac);
+
     public:
+        //Edcaf(int aifsn, AccessCategory ac, IChannelAccess::ICallback *callback, IEdcaCollisionController *collisionController, RecoveryProcedure *recoveryProcedure, IRateSelection *rateSelection);
+
         virtual AccessCategory getAccessCategory() { return ac; }
 
         // IContentionBasedChannelAccess

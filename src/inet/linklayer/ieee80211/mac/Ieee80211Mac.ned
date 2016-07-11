@@ -24,7 +24,7 @@ import inet.linklayer.ieee80211.mac.contract.IRx;
 import inet.linklayer.ieee80211.mac.contract.IStatistics;
 import inet.linklayer.ieee80211.mac.contract.ITx;
 import inet.linklayer.ieee80211.mac.coordinationfunction.Dcf;
-import inet.linklayer.ieee80211.mac.coordinationfunction.Edca;
+import inet.linklayer.ieee80211.mac.coordinationfunction.Hcf;
 
 
 // near copy-paste of inet.linklayer.base.MACProtocolBase to work around "compound-module cannot extend a simple-module" error in OMNeT++ 4.x
@@ -134,7 +134,7 @@ module Ieee80211Mac extends MACProtocolBase like IIeee80211Mac
         dcf: Dcf {
             @display("p=285,149");
         }
-        edca: Edca {
+        hcf: Hcf {
             @display("p=400,149;i=block/queue");
         }
         rx: <default("Rx")> like IRx {

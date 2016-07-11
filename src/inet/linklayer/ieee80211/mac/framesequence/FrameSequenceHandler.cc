@@ -20,9 +20,10 @@
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceStep.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
 
-
 namespace inet {
 namespace ieee80211 {
+
+Define_Module(FrameSequenceHandler)
 
 FrameSequenceHandler::~FrameSequenceHandler()
 {
@@ -72,6 +73,7 @@ void FrameSequenceHandler::handleMessage(cMessage* message)
 
 void FrameSequenceHandler::processResponse(Ieee80211Frame* frame)
 {
+    ASSERT(callback != nullptr);
     Enter_Method("processResponse(\"%s\")", frame->getName());
     auto lastStep = context->getLastStep();
     switch (lastStep->getType()) {
@@ -100,8 +102,10 @@ void FrameSequenceHandler::transmissionComplete()
     }
 }
 
-void FrameSequenceHandler::startFrameSequence(IFrameSequence *frameSequence, FrameSequenceContext *context)
+void FrameSequenceHandler::startFrameSequence(IFrameSequence *frameSequence, FrameSequenceContext *context, IFrameSequenceHandler::ICallback *callback)
 {
+    ASSERT(callback == nullptr);
+    this->callback = callback;
     if (isSequenceRunning()) {
         this->frameSequence = frameSequence;
         this->context = context;
@@ -169,13 +173,13 @@ void FrameSequenceHandler::finishFrameSequenceStep()
         switch (lastStep->getType()) {
             case IFrameSequenceStep::Type::TRANSMIT: {
                 auto transmitStep = static_cast<TransmitStep *>(lastStep);
-                originatorMpduHandler->processTransmittedFrame(transmitStep->getFrameToTransmit());
+                callback->processTransmittedFrame(transmitStep->getFrameToTransmit());
                 break;
             }
             case IFrameSequenceStep::Type::RECEIVE: {
                 auto receiveStep = static_cast<ReceiveStep *>(lastStep);
                 auto transmitStep = check_and_cast<ITransmitStep*>(context->getStepBeforeLast());
-                originatorMpduHandler->processReceivedFrame(receiveStep->getReceivedFrame(), transmitStep->getFrameToTransmit());
+                callback->processReceivedFrame(receiveStep->getReceivedFrame(), transmitStep->getFrameToTransmit());
                 cancelEvent(endReceptionTimeout);
                 break;
             }
@@ -193,6 +197,7 @@ void FrameSequenceHandler::finishFrameSequence(bool ok)
     context = nullptr;
     frameSequence = nullptr;
     callback->frameSequenceFinished();
+    callback = nullptr;
 }
 
 void FrameSequenceHandler::abortFrameSequence()
@@ -202,10 +207,10 @@ void FrameSequenceHandler::abortFrameSequence()
     auto failedTxStep = check_and_cast<ITransmitStep*>(dynamic_cast<IReceiveStep*>(step) ? context->getStepBeforeLast() : step);
     auto frameToTransmit = failedTxStep->getFrameToTransmit();
     if (auto dataOrMgmtFrame = dynamic_cast<Ieee80211DataOrMgmtFrame *>(frameToTransmit))
-        originatorMpduHandler->processFailedFrame(dataOrMgmtFrame);
+        callback->processFailedFrame(dataOrMgmtFrame);
     else if (auto rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frameToTransmit)) {
         auto rtsTxStep = dynamic_cast<RtsTransmitStep*>(failedTxStep);
-        originatorMpduHandler->processRtsProtectionFailed(rtsTxStep->getProtectedFrame());
+        callback->processRtsProtectionFailed(rtsTxStep->getProtectedFrame());
         delete rtsFrame;
     }
     else if (auto blockAckReq = dynamic_cast<Ieee80211BlockAckReq *>(frameToTransmit))

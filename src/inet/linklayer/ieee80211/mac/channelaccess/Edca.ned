@@ -19,27 +19,15 @@
 package inet.linklayer.ieee80211.mac.channelaccess;
 
 import inet.linklayer.ieee80211.mac.contract.ICollisionController;
-import inet.linklayer.ieee80211.mac.coordinationfunction.Foo;
-import inet.linklayer.ieee80211.mac.originator.OriginatorBlockAckAgreementHandler;
-import inet.linklayer.ieee80211.mac.originator.OriginatorQoSMacDataService;
-import inet.linklayer.ieee80211.mac.recipient.RecipientBlockAckAgreementHandler;
-import inet.linklayer.ieee80211.mac.recipient.RecipientQoSMacDataService;
-import inet.linklayer.ieee80211.mac.recipient.RecipientQoSMpduHandler;
 
 
 module Edca
 {
     parameters:
-        int numFoos = default(4);
-
+        int numEdcafs = default(4);
         string rxModule;
         string txModule;
         string rateSelectionModule;
-
-        foos[0].accessCategory = default("AC_BE");
-        foos[1].accessCategory = default("AC_BK");
-        foos[2].accessCategory = default("AC_VO");
-        foos[3].accessCategory = default("AC_VI");
 
         *.originatorMacDataServiceModule = "^.originatorQoSMacDataService";
         *.recipientMacDataServiceModule = "^.recipientQoSMacDataService";
@@ -53,9 +41,6 @@ module Edca
         @class("Edca");
 
     submodules:
-        foos[numFoos]: Foo {
-            @display("p=350,139");
-        }
         collisionController: <default("CollisionController")> like ICollisionController {
             @display("p=100,222");
         }

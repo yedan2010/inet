@@ -31,6 +31,8 @@ class INET_API IEdcaCollisionController
     public:
         virtual ~IEdcaCollisionController() {}
 
+//        virtual void expectedChannelAccess(Edcaf *caf, simtime_t time) = 0;
+
         virtual void recordTxStartTime(Edcaf *channelAccess, simtime_t txStartTime) = 0;
         virtual void cancelTxStartTime(Edcaf *channelAccess) = 0;
         virtual bool isInternalCollision(Edcaf *channelAccess) = 0;

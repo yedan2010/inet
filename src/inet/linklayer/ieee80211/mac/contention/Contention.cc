@@ -71,7 +71,7 @@ Contention::~Contention()
     cancelAndDelete(startTxEvent);
 }
 
-void Contention::startContention(int cw)
+void Contention::startContention(int cw, simtime_t ifs, simtime_t eifs, simtime_t slotTime, ICallback *callback)
 {
     ASSERT(ifs >= 0 && eifs >= 0 && slotTime >= 0 && cw >= 0);
     Enter_Method("startContention()");
@@ -79,7 +79,7 @@ void Contention::startContention(int cw)
     this->ifs = ifs;
     this->eifs = eifs;
     this->slotTime = slotTime;
-
+    this->callback = callback;
     backoffSlots = cw;
     handleWithFSM(START);
 }

@@ -18,15 +18,29 @@
 #ifndef __INET_HCF_H
 #define __INET_HCF_H
 
-#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
-
 #include "inet/linklayer/ieee80211/mac/channelaccess/Edca.h"
 #include "inet/linklayer/ieee80211/mac/channelaccess/Hcca.h"
-#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
-
-#include "inet/linklayer/ieee80211/mac/originator/OriginatorQoSMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/contract/ICoordinationFunction.h"
+#include "inet/linklayer/ieee80211/mac/contract/IOriginatorMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRecipientMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/contract/ITx.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
-#include "inet/linklayer/ieee80211/mac/recipient/RecipientQoSMpduHandler.h"
+#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
+#include "inet/linklayer/ieee80211/mac/InProgressFrames.h"
+#include "inet/linklayer/ieee80211/mac/lifetime/EdcaTransmitLifetimeHandler.h"
+#include "inet/linklayer/ieee80211/mac/originator/AckHandler.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorAckProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorBlockAckAgreementHandler.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorBlockAckProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorQoSMacDataService.h"
+#include "inet/linklayer/ieee80211/mac/originator/RecoveryProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/RtsProcedure.h"
+#include "inet/linklayer/ieee80211/mac/originator/TxopProcedure.h"
+#include "inet/linklayer/ieee80211/mac/recipient/AckProcedure.h"
+#include "inet/linklayer/ieee80211/mac/recipient/BlockAckProcedure.h"
+#include "inet/linklayer/ieee80211/mac/recipient/CtsProcedure.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientBlockAckAgreementHandler.h"
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientQoSMacDataService.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -37,45 +51,51 @@ namespace ieee80211 {
 class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
 {
     protected:
-        // channel access methods
-        Edca *edca = nullptr;
-        Hcca *hcca = nullptr; // TODO: unimplemented,
-
+        // Transmission and Reception
         IRx *rx = nullptr;
         ITx *tx = nullptr;
 
-        FrameSequenceHandler *frameSequenceHandler = nullptr;
+        // Channel Access Methods
+        Edca *edca = nullptr;
+        Hcca *hcca = nullptr;
 
-        std::vector<PendingQueue *> pendingQueues;
-        std::vector<InProgressFrames *> inprogressFrames;
+        // MAC Data Service
+        OriginatorQoSMacDataService *originatorDataService = nullptr;
+        RecipientQoSMacDataService *recipientDataService = nullptr;
 
-        OriginatorQoSMacDataService *macDataService = nullptr;
-
-        // procedures
-        std::vector<AckHandler *> ackHandlers;
-        std::vector<RecoveryProcedure *> recoveryProcedures;
-        OriginatorAckProcedure *ackProcedure = nullptr;
+        // MAC Procedures
+        AckProcedure *recipientAckProcedure = nullptr;
+        OriginatorAckProcedure *originatorAckProcedure = nullptr;
         RtsProcedure *rtsProcedure = nullptr;
-        TxOpProcedure *txopProcedure = nullptr;
+        CtsProcedure *ctsProcedure = nullptr;
+        OriginatorBlockAckProcedure *originatorBlockAckProcedure = nullptr;
+        BlockAckProcedure *recipientBlockAckProcedure = nullptr;
+        EdcaTransmitLifetimeHandler *lifetimeHandler = nullptr;
+        std::vector<RecoveryProcedure *> recoveryProcedures;
+
+        // Block Ack Agreement Handlers
         OriginatorBlockAckAgreementHandler *originatorBlockAckAgreementHandler = nullptr;
         RecipientBlockAckAgreementHandler *recipientBlockAckAgreementHandler = nullptr;
-        OriginatorBlockAckProcedure *blockAckProcedure = nullptr;
-        EdcaTransmitLifetimeHandler *lifetimeHandler = nullptr;
 
-        OriginatorQoSMpduHandler *originatorMpduHandler = nullptr;
-        RecipientQoSMpduHandler *recipientMpduHandler = nullptr;
+        // Ack handler
+        std::vector<AckHandler *> ackHandlers;
 
-        const Ieee80211ModeSet *modeSet = nullptr;
+        // Tx Opportunity
+        std::vector<TxOpProcedure*> txops;
+
+        // Queues
+        std::vector<PendingQueue *> pendingQueues;
+        std::vector<InProgressFrames *> inProgressFrames;
+
+        // Frame sequence handlers
+        IFrameSequenceHandler *frameSequenceHandler = nullptr;
 
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
 
-        // Edca
         void startFrameSequence(AccessCategory ac);
         void handleInternalCollision(std::vector<Edcaf*> internallyCollidedEdcafs);
-
-        // TODO: Hcca
 
     public:
         // ICoordinationFunction
@@ -87,8 +107,15 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
 
         // IFrameSequenceHandler::ICallback
         virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) override;
-        virtual void frameSequenceFinished() override;
+
         virtual bool isReceptionInProgress() override;
+        virtual bool hasFrameToTransmit() override;
+
+        virtual void processRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) override;
+        virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
+        virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
+        virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
+        virtual void frameSequenceFinished() override;
 
         // ITx::ICallback
         virtual void transmissionComplete() override;

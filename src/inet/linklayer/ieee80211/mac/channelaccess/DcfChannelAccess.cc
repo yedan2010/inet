@@ -47,7 +47,7 @@ void DcfChannelAccess::requestChannelAccess(IChannelAccess::ICallback* callback)
     if (owning)
         callback->channelAccessGranted();
     else if (!contentionInProgress) {
-        contention->startContention(recoveryProcedure->getCw());
+        contention->startContention(recoveryProcedure->getCw(), ifs, eifs, slotTime, this);
         contentionInProgress = true;
     }
     else ;

@@ -25,18 +25,25 @@ namespace ieee80211 {
 class INET_API IFrameSequenceHandler
 {
     public:
-        class ICallback
+        class INET_API ICallback
         {
             public:
                 virtual ~ICallback() {}
 
                 virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) = 0;
+
+                virtual void processRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) = 0;
+                virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) = 0;
+                virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) = 0;
+                virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) = 0;
                 virtual void frameSequenceFinished() = 0;
+
                 virtual bool isReceptionInProgress() = 0;
+                virtual bool hasFrameToTransmit() = 0;
         };
 
     public:
-        virtual void startFrameSequence(IFrameSequence *frameSequence, FrameSequenceContext *context) = 0;
+        virtual void startFrameSequence(IFrameSequence *frameSequence, FrameSequenceContext *context, ICallback *callback) = 0;
         virtual void processResponse(Ieee80211Frame *frame) = 0;
         virtual void transmissionComplete() = 0;
         virtual bool isSequenceRunning() = 0;
