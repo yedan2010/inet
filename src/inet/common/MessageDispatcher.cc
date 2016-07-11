@@ -129,8 +129,11 @@ cGate *MessageDispatcher::handleUpperLayerCommand(cMessage *message, cGate *inGa
     int socketId = computeSocketId(message);
     int interfaceId = computeInterfaceId(message);
     int protocolId = computeProtocolId(message);
-    if (socketId != -1)
+    if (socketId != -1) {
+        if (socketIdToUpperLayerGateIndex.find(socketId) != socketIdToUpperLayerGateIndex.end())
+            throw cRuntimeError("handleUpperLayerCommand(): Socket is already registered: id = %d", socketId);
         socketIdToUpperLayerGateIndex[socketId] = inGate->getIndex();
+    }
     if (protocolId != -1) {
         auto it = protocolIdToLowerLayerGateIndex.find(protocolId);
         if (it != protocolIdToLowerLayerGateIndex.end())
@@ -174,12 +177,16 @@ cGate *MessageDispatcher::handleLowerLayerCommand(cMessage *message, cGate *inGa
 void MessageDispatcher::handleRegisterProtocol(const Protocol& protocol, cGate *protocolGate)
 {
     if (!strcmp("upperLayerIn", protocolGate->getName())) {
+        if (protocolIdToUpperLayerGateIndex.find(protocol.getId()) != protocolIdToUpperLayerGateIndex.end())
+            throw cRuntimeError("handleRegisterProtocol(): Upper layer protocol is already registered: %s", protocol.info().c_str());
         protocolIdToUpperLayerGateIndex[protocol.getId()] = protocolGate->getIndex();
         int size = gateSize("lowerLayerOut");
         for (int i = 0; i < size; i++)
             registerProtocol(protocol, gate("lowerLayerOut", i));
     }
     else if (!strcmp("lowerLayerIn", protocolGate->getName())) {
+        if (protocolIdToLowerLayerGateIndex.find(protocol.getId()) != protocolIdToLowerLayerGateIndex.end())
+            throw cRuntimeError("handleRegisterProtocol(): Lower layer protocol is already registered: %s", protocol.info().c_str());
         protocolIdToLowerLayerGateIndex[protocol.getId()] = protocolGate->getIndex();
         int size = gateSize("upperLayerOut");
         for (int i = 0; i < size; i++)
@@ -194,6 +201,8 @@ void MessageDispatcher::handleRegisterInterface(const InterfaceEntry &interface,
     if (!strcmp("upperLayerIn", interfaceGate->getName()))
         throw cRuntimeError("handleRegisterInterface(): Invalid gate: %s", interfaceGate->getName());
     else if (!strcmp("lowerLayerIn", interfaceGate->getName())) {
+        if (interfaceIdToLowerLayerGateIndex.find(interface.getInterfaceId()) != interfaceIdToLowerLayerGateIndex.end())
+            throw cRuntimeError("handleRegisterInterface(): Interface is already registered: %s", interface.info().c_str());
         interfaceIdToLowerLayerGateIndex[interface.getInterfaceId()] = interfaceGate->getIndex();
         int size = gateSize("upperLayerOut");
         for (int i = 0; i < size; i++)
