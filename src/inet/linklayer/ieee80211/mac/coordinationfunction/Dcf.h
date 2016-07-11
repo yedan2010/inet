@@ -82,10 +82,10 @@ class INET_API Dcf : public ICoordinationFunction, public IFrameSequenceHandler:
         virtual bool isReceptionInProgress() override;
         virtual bool hasFrameToTransmit() override;
 
-        virtual void processRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) override;
-        virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
-        virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
-        virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
+        virtual void originatorProcessRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) override;
+        virtual void originatorProcessTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
+        virtual void originatorProcessReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
+        virtual void originatorProcessFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
         virtual void frameSequenceFinished() override;
 
         // ITx::ICallback

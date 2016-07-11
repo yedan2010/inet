@@ -51,6 +51,8 @@ namespace ieee80211 {
 class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler::ICallback, public IChannelAccess::ICallback, public ITx::ICallback, public cSimpleModule
 {
     protected:
+        //Ieee80211Mac *mac = nullptr;
+
         // Transmission and Reception
         IRx *rx = nullptr;
         ITx *tx = nullptr;
@@ -90,12 +92,25 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
         // Frame sequence handlers
         IFrameSequenceHandler *frameSequenceHandler = nullptr;
 
+        simtime_t sifs;
+
     protected:
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
         virtual void initialize(int stage) override;
 
         void startFrameSequence(AccessCategory ac);
         void handleInternalCollision(std::vector<Edcaf*> internallyCollidedEdcafs);
+
+        void sendUp(const std::vector<Ieee80211Frame*>& completeFrames);
+
+        virtual void recipientProcessReceivedFrame(Ieee80211Frame *frame);
+        virtual void recipientProcessControlFrame(Ieee80211Frame *frame);
+        virtual void recipientProcessManagementFrame(Ieee80211ManagementFrame *frame);
+        virtual void originatorProcessRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) override;
+        virtual void originatorProcessTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
+        virtual void originatorProcessReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
+        virtual void originatorProcessFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
+        virtual void frameSequenceFinished() override;
 
     public:
         // ICoordinationFunction
@@ -110,12 +125,6 @@ class INET_API Hcf : public ICoordinationFunction, public IFrameSequenceHandler:
 
         virtual bool isReceptionInProgress() override;
         virtual bool hasFrameToTransmit() override;
-
-        virtual void processRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) override;
-        virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) override;
-        virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) override;
-        virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) override;
-        virtual void frameSequenceFinished() override;
 
         // ITx::ICallback
         virtual void transmissionComplete() override;

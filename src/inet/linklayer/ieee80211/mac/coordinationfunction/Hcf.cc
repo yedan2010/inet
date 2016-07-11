@@ -16,6 +16,7 @@
 //
 
 #include "inet/linklayer/ieee80211/mac/coordinationfunction/Hcf.h"
+#include "inet/linklayer/ieee80211/mac/framesequence/HcfFs.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -69,7 +70,7 @@ void Hcf::processLowerFrame(Ieee80211Frame* frame)
     else if (hcca->isOwning())
         throw cRuntimeError("Hcca is unimplemented!");
     else
-        recipientMpduHandler->processReceivedFrame(frame);
+        recipientProcessReceivedFrame(frame);
 }
 
 //FrameSequenceContext* OriginatorQoSMpduHandler::buildContext()
@@ -148,6 +149,70 @@ void Hcf::transmitFrame(Ieee80211Frame* frame, simtime_t ifs)
     tx->transmitFrame(frame, ifs, this);
 }
 
+void Hcf::recipientProcessControlFrame(Ieee80211Frame* frame)
+{
+    if (auto rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frame)) {
+        ctsProcedure->processReceivedRts(rtsFrame);
+        auto ctsFrame = ctsProcedure->buildCts(rtsFrame);
+        if (ctsFrame) {
+            tx->transmitFrame(ctsFrame, sifs, this);
+            ctsProcedure->processTransmittedCts(ctsFrame);
+        }
+    }
+    else if (auto blockAckRequest = dynamic_cast<Ieee80211BlockAckReq*>(frame)) {
+        recipientBlockAckProcedure->processReceivedBlockAckReq(blockAckRequest);
+        auto blockAck = recipientBlockAckProcedure->buildBlockAck(blockAckRequest);
+        if (blockAck) {
+            tx->transmitFrame(blockAck, sifs, this);
+            recipientBlockAckProcedure->processTransmittedBlockAck(blockAck);
+        }
+    }
+    else
+        throw cRuntimeError("Unknown packet");
+}
+
+void Hcf::recipientProcessManagementFrame(Ieee80211ManagementFrame* frame)
+{
+    if (auto addbaRequest = dynamic_cast<Ieee80211AddbaRequest *>(frame)) {
+        recipientBlockAckAgreementHandler->processReceivedAddbaRequest(addbaRequest);
+        auto addbaResponse = recipientBlockAckAgreementHandler->buildAddbaResponse(addbaRequest);
+        if (addbaResponse)
+            processUpperFrame(addbaResponse);
+    }
+    else if (auto addbaResponse = dynamic_cast<Ieee80211AddbaResponse *>(frame)) {
+        originatorBlockAckAgreementHandler->processReceivedAddbaResponse(addbaResponse);
+    }
+    else if (auto delba = dynamic_cast<Ieee80211Delba*>(frame)) {
+        if (delba->getInitiator())
+            recipientBlockAckAgreementHandler->processReceivedDelba(delba);
+        else
+            originatorBlockAckAgreementHandler->processReceivedDelba(delba);
+    }
+    else
+        throw cRuntimeError("Unknown packet");
+}
+
+void Hcf::recipientProcessReceivedFrame(Ieee80211Frame* frame)
+{
+    recipientAckProcedure->processReceivedFrame(frame);
+    auto ack = recipientAckProcedure->buildAck(frame);
+    if (ack) {
+        tx->transmitFrame(ack, sifs, this);
+        recipientAckProcedure->processTransmittedAck(ack);
+    }
+    if (auto dataFrame = dynamic_cast<Ieee80211DataFrame*>(frame)) {
+        sendUp(recipientDataService->dataFrameReceived(dataFrame));
+    }
+    else if (auto mgmtFrame = dynamic_cast<Ieee80211ManagementFrame*>(frame)) {
+        sendUp(recipientDataService->managementFrameReceived(mgmtFrame));
+        recipientProcessManagementFrame(mgmtFrame);
+    }
+    else { // TODO: else if (auto ctrlFrame = dynamic_cast<Ieee80211ControlFrame*>(frame))
+        sendUp(recipientDataService->controlFrameReceived(frame));
+        recipientProcessControlFrame(frame);
+    }
+}
+
 void Hcf::transmissionComplete()
 {
     auto edcaf = edca->getChannelOwner();
@@ -159,8 +224,7 @@ void Hcf::transmissionComplete()
         ;
 }
 
-
-void Hcf::processRtsProtectionFailed(Ieee80211DataOrMgmtFrame* protectedFrame)
+void Hcf::originatorProcessRtsProtectionFailed(Ieee80211DataOrMgmtFrame* protectedFrame)
 {
     auto edcaf = edca->getChannelOwner();
     if (edcaf) {
@@ -177,7 +241,7 @@ void Hcf::processRtsProtectionFailed(Ieee80211DataOrMgmtFrame* protectedFrame)
         throw cRuntimeError("Hcca is unimplemented!");
 }
 
-void Hcf::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
+void Hcf::originatorProcessTransmittedFrame(Ieee80211Frame* transmittedFrame)
 {
     auto edcaf = edca->getChannelOwner();
     if (edcaf) {
@@ -207,7 +271,7 @@ void Hcf::processTransmittedFrame(Ieee80211Frame* transmittedFrame)
         throw cRuntimeError("Hcca is unimplemented!");
 }
 
-void Hcf::processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
+void Hcf::originatorProcessFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
 {
     auto edcaf = edca->getChannelOwner();
     if (edcaf) {
@@ -242,7 +306,7 @@ void Hcf::processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame)
         throw cRuntimeError("Hcca is unimplemented!");
 }
 
-void Hcf::processReceivedFrame(Ieee80211Frame* frame, Ieee80211Frame* lastTransmittedFrame)
+void Hcf::originatorProcessReceivedFrame(Ieee80211Frame* frame, Ieee80211Frame* lastTransmittedFrame)
 {
     auto edcaf = edca->getChannelOwner();
     if (edcaf) {
@@ -288,6 +352,15 @@ bool Hcf::hasFrameToTransmit()
     }
     else
         throw cRuntimeError("Hcca is unimplemented");
+}
+
+void Hcf::sendUp(const std::vector<Ieee80211Frame*>& completeFrames)
+{
+//    for (auto frame : completeFrames) {
+//        // FIXME: mgmt module does not handle addba req ..
+//        if (!dynamic_cast<Ieee80211AddbaRequest*>(frame) && !dynamic_cast<Ieee80211AddbaResponse*>(frame))
+//            mac->sendUp(frame);
+//    }
 }
 
 

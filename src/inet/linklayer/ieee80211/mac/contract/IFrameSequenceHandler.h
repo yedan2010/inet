@@ -32,10 +32,10 @@ class INET_API IFrameSequenceHandler
 
                 virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) = 0;
 
-                virtual void processRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) = 0;
-                virtual void processTransmittedFrame(Ieee80211Frame* transmittedFrame) = 0;
-                virtual void processReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) = 0;
-                virtual void processFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) = 0;
+                virtual void originatorProcessRtsProtectionFailed(Ieee80211DataOrMgmtFrame *protectedFrame) = 0;
+                virtual void originatorProcessTransmittedFrame(Ieee80211Frame* transmittedFrame) = 0;
+                virtual void originatorProcessReceivedFrame(Ieee80211Frame *frame, Ieee80211Frame *lastTransmittedFrame) = 0;
+                virtual void originatorProcessFailedFrame(Ieee80211DataOrMgmtFrame* failedFrame) = 0;
                 virtual void frameSequenceFinished() = 0;
 
                 virtual bool isReceptionInProgress() = 0;

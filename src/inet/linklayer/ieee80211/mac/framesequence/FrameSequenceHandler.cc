@@ -173,13 +173,13 @@ void FrameSequenceHandler::finishFrameSequenceStep()
         switch (lastStep->getType()) {
             case IFrameSequenceStep::Type::TRANSMIT: {
                 auto transmitStep = static_cast<TransmitStep *>(lastStep);
-                callback->processTransmittedFrame(transmitStep->getFrameToTransmit());
+                callback->originatorProcessTransmittedFrame(transmitStep->getFrameToTransmit());
                 break;
             }
             case IFrameSequenceStep::Type::RECEIVE: {
                 auto receiveStep = static_cast<ReceiveStep *>(lastStep);
                 auto transmitStep = check_and_cast<ITransmitStep*>(context->getStepBeforeLast());
-                callback->processReceivedFrame(receiveStep->getReceivedFrame(), transmitStep->getFrameToTransmit());
+                callback->originatorProcessReceivedFrame(receiveStep->getReceivedFrame(), transmitStep->getFrameToTransmit());
                 cancelEvent(endReceptionTimeout);
                 break;
             }
@@ -207,10 +207,10 @@ void FrameSequenceHandler::abortFrameSequence()
     auto failedTxStep = check_and_cast<ITransmitStep*>(dynamic_cast<IReceiveStep*>(step) ? context->getStepBeforeLast() : step);
     auto frameToTransmit = failedTxStep->getFrameToTransmit();
     if (auto dataOrMgmtFrame = dynamic_cast<Ieee80211DataOrMgmtFrame *>(frameToTransmit))
-        callback->processFailedFrame(dataOrMgmtFrame);
+        callback->originatorProcessFailedFrame(dataOrMgmtFrame);
     else if (auto rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frameToTransmit)) {
         auto rtsTxStep = dynamic_cast<RtsTransmitStep*>(failedTxStep);
-        callback->processRtsProtectionFailed(rtsTxStep->getProtectedFrame());
+        callback->originatorProcessRtsProtectionFailed(rtsTxStep->getProtectedFrame());
         delete rtsFrame;
     }
     else if (auto blockAckReq = dynamic_cast<Ieee80211BlockAckReq *>(frameToTransmit))
