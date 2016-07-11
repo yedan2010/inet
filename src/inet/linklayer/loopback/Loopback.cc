@@ -90,7 +90,7 @@ void Loopback::handleMessage(cMessage *msg)
     numRcvdOK++;
     emit(packetSentToUpperSignal, msg);
     numSent++;
-    auto protocol = msg->getMandatoryTag<ProtocolReq>()->getProtocol();
+    auto protocol = msg->getMandatoryTag<ProtocolInd>()->getProtocol();
     msg->clearTags();
     msg->ensureTag<ProtocolReq>()->setProtocol(protocol);
     msg->ensureTag<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
